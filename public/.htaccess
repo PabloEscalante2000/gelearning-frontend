@@ -1,0 +1,29 @@
+Options -MultiViews
+RewriteEngine On
+RewriteBase /
+
+# --- Archivos y directorios existentes se sirven directamente ---
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# --- Rutas dinámicas de lecciones (más específico primero) ---
+RewriteRule ^courses/([^/]+)/modules/([^/]+)/lessons/([^/]+)/?$ /courses/0/modules/0/lessons/0/index.html [L]
+
+# --- Rutas dinámicas de foro con thread ---
+RewriteRule ^courses/([^/]+)/forum/([^/]+)/?$ /courses/0/forum/0/index.html [L]
+
+# --- Rutas dinámicas de foro ---
+RewriteRule ^courses/([^/]+)/forum/?$ /courses/0/forum/index.html [L]
+
+# --- Rutas dinámicas de live-sessions y progress ---
+RewriteRule ^courses/([^/]+)/live-sessions/?$ /courses/0/live-sessions/index.html [L]
+RewriteRule ^courses/([^/]+)/progress/?$ /courses/0/progress/index.html [L]
+
+# --- Detalle de curso ---
+RewriteRule ^courses/([^/]+)/?$ /courses/0/index.html [L]
+
+# --- Admin: edición de curso ---
+RewriteRule ^admin/courses/([^/]+)/edit/?$ /admin/courses/0/edit/index.html [L]
+
+# --- Fallback general: sirve index.html raíz para rutas no encontradas ---
+RewriteRule ^ /index.html [L]

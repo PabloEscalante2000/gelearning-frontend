@@ -1,0 +1,62 @@
+Eres un experto en Next.js 14 con App Router y Tailwind CSS. Voy a construir el frontend de una plataforma de cursos virtuales (LMS). El backend ya existe: es una API REST en Laravel 11 con Sanctum. Trabaja paso a paso, explica cada decisión importante y genera todo el código funcional.
+
+## Stack y entorno
+- TypeScript estricto
+- Tailwind CSS para estilos
+- shadcn/ui como librería de componentes base
+- TanStack Query (react-query) para fetching y caché de datos
+- Zustand para estado global (sesión del usuario)
+- next-auth v5 (Auth.js) para manejo de sesión con Sanctum: login guarda el token de Sanctum en la sesión server-side
+- Axios como cliente HTTP con interceptores para inyectar el token en cada request y manejar errores 401/403
+- react-hook-form + zod para formularios con validación
+- lucide-react para íconos
+
+## URL base de la API
+```
+NEXT_PUBLIC_API_URL=http://gelearning.test/api/v1
+```
+Toda petición autenticada envía el header `Authorization: Bearer {token}`.
+
+## Estructura de carpetas
+Sigue estrictamente el App Router de Next.js 14:
+```
+src/
+  app/
+    (auth)/
+      login/page.tsx
+    (dashboard)/
+      layout.tsx               ← layout con sidebar + header para usuarios autenticados
+      dashboard/page.tsx
+      courses/
+        page.tsx               ← lista de cursos
+        [courseId]/
+          page.tsx             ← detalle del curso
+          modules/
+            [moduleId]/
+              lessons/
+                [lessonId]/page.tsx  ← vista de lección
+          forum/page.tsx
+          forum/[threadId]/page.tsx
+          live-sessions/page.tsx
+          progress/page.tsx
+    (admin)/
+      layout.tsx               ← layout solo para admin/instructor
+      admin/
+        users/page.tsx
+        courses/page.tsx
+        courses/[courseId]/edit/page.tsx
+        invitations/page.tsx
+  components/
+    ui/                        ← componentes shadcn/ui
+    layout/
+      Sidebar.tsx
+      Header.tsx
+      MobileNav.tsx
+    courses/
+      CourseCard.tsx
+      CourseGrid.tsx
+      ModuleAccordion.tsx
+      LessonItem.tsx
+      ProgressBar.tsx
+      VideoPlayer.tsx          ← embed de Bunny.net por URL
+      PdfViewer.tsx 
