@@ -33,13 +33,26 @@ export default function Sidebar() {
   const navItems = isAdmin ? adminNav : studentNav;
 
   return (
-    <aside className="hidden md:flex flex-col w-64 min-h-screen bg-slate-900 text-slate-100">
-      <div className="flex items-center gap-2 px-6 py-5 border-b border-slate-700">
-        <GraduationCap className="h-7 w-7 text-primary" />
-        <span className="text-xl font-bold">GELearning</span>
+    <aside
+      className="hidden md:flex flex-col w-64 min-h-screen"
+      style={{ background: "hsl(var(--sidebar))", color: "hsl(var(--sidebar-foreground))" }}
+    >
+      {/* Logo */}
+      <div
+        className="flex items-center gap-2.5 px-6 py-5"
+        style={{ borderBottom: "1px solid hsl(var(--sidebar-border))" }}
+      >
+        <div
+          className="flex h-8 w-8 items-center justify-center rounded-lg"
+          style={{ background: "hsl(var(--primary))" }}
+        >
+          <GraduationCap className="h-5 w-5 text-white" />
+        </div>
+        <span className="text-lg font-semibold tracking-tight">GELearning</span>
       </div>
 
-      <nav className="flex-1 px-3 py-4 space-y-1">
+      {/* Nav */}
+      <nav className="flex-1 px-3 py-4 space-y-0.5">
         {navItems.map(({ href, label, icon: Icon }) => {
           const active = pathname === href || pathname.startsWith(href.replace(/\/$/, "/"));
           return (
@@ -47,22 +60,48 @@ export default function Sidebar() {
               key={href}
               href={href}
               className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150",
                 active
-                  ? "bg-primary text-primary-foreground"
-                  : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                  ? "text-white"
+                  : "opacity-70 hover:opacity-100"
               )}
+              style={
+                active
+                  ? { background: "hsl(var(--sidebar-primary))" }
+                  : { background: "transparent" }
+              }
+              onMouseEnter={active ? undefined : (e) => {
+                (e.currentTarget as HTMLElement).style.background = "hsl(var(--sidebar-muted))";
+              }}
+              onMouseLeave={active ? undefined : (e) => {
+                (e.currentTarget as HTMLElement).style.background = "transparent";
+              }}
             >
               <Icon className="h-4 w-4 shrink-0" />
               <span className="flex-1">{label}</span>
-              {active && <ChevronRight className="h-3 w-3" />}
+              {active && <ChevronRight className="h-3 w-3 opacity-60" />}
             </Link>
           );
         })}
       </nav>
 
-      <div className="px-3 py-4 border-t border-slate-700">
-        <p className="px-3 text-xs text-slate-400 truncate">{user?.email}</p>
+      {/* Footer */}
+      <div
+        className="px-4 py-3"
+        style={{ borderTop: "1px solid hsl(var(--sidebar-border))" }}
+      >
+        <div className="flex items-center gap-2.5">
+          <div
+            className="h-7 w-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
+            style={{ background: "hsl(var(--primary))", color: "white" }}
+          >
+            {user?.name?.charAt(0).toUpperCase()}
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs font-medium truncate">{user?.name}</p>
+            <p className="text-xs opacity-50 truncate">{user?.email}</p>
+          </div>
+        </div>
       </div>
     </aside>
   );

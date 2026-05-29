@@ -9,6 +9,7 @@ const apiClient = axios.create({
   },
 });
 
+// Inject Bearer token on every request
 apiClient.interceptors.request.use((config) => {
   const token = useAuthStore.getState().token;
   if (token) {
@@ -17,12 +18,25 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
+// Unwrap { success, data, message } → response.data becomes the inner data
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    if (
+      response.data &&
+      typeof response.data === "object" &&
+      "data" in response.data &&
+      "success" in response.data
+    ) {
+      response.data = response.data.data;
+    }
+    return response;
+  },
   (error) => {
     if (error.response?.status === 401) {
       useAuthStore.getState().clear();
-      window.location.href = "/login/";
+      if (typeof window !== "undefined") {
+        window.location.href = "/login/";
+      }
     }
     return Promise.reject(error);
   }

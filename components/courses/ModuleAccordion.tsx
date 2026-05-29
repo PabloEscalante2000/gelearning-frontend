@@ -16,26 +16,27 @@ export default function ModuleAccordion({
   activeLessonId,
 }: ModuleAccordionProps) {
   const defaultOpen = modules
-    .filter((m) => m.lessons.some((l) => l.id === Number(activeLessonId)))
+    .filter((m) => (m.lessons ?? []).some((l) => l.id === Number(activeLessonId)))
     .map((m) => String(m.id));
 
   return (
     <Accordion type="multiple" defaultValue={defaultOpen} className="w-full">
       {modules.map((module) => {
-        const completedCount = module.lessons.filter((l) => l.completed).length;
+        const lessons = module.lessons ?? [];
+        const completedCount = lessons.filter((l) => l.completed).length;
         return (
           <AccordionItem key={module.id} value={String(module.id)}>
             <AccordionTrigger className="hover:no-underline px-1">
               <div className="flex flex-col items-start text-left gap-0.5">
                 <span className="font-medium text-sm">{module.title}</span>
                 <span className="text-xs text-muted-foreground">
-                  {completedCount}/{module.lessons.length} lecciones
+                  {completedCount}/{lessons.length} lecciones
                 </span>
               </div>
             </AccordionTrigger>
             <AccordionContent className="pb-2 pt-0">
               <div className="space-y-0.5">
-                {module.lessons.map((lesson) => (
+                {lessons.map((lesson) => (
                   <LessonItem
                     key={lesson.id}
                     lesson={lesson}

@@ -16,7 +16,7 @@ export default function LiveSessionsPage() {
     queryKey: ["live-sessions", courseId],
     queryFn: async () => {
       const { data } = await apiClient.get<LiveSession[]>(
-        `/courses/${courseId}/live-sessions`
+        `/api/v1/courses/${courseId}/live-sessions`
       );
       return data;
     },
@@ -24,8 +24,8 @@ export default function LiveSessionsPage() {
   });
 
   const now = new Date();
-  const upcoming = sessions.filter((s) => new Date(s.scheduled_at) >= now);
-  const past = sessions.filter((s) => new Date(s.scheduled_at) < now);
+  const upcoming = sessions.filter((s) => new Date(s.starts_at) >= now);
+  const past = sessions.filter((s) => new Date(s.starts_at) < now);
 
   return (
     <div className="space-y-6 max-w-3xl">
@@ -56,9 +56,7 @@ export default function LiveSessionsPage() {
         <div>
           <h2 className="font-semibold mb-3">Próximas sesiones</h2>
           <div className="space-y-3">
-            {upcoming.map((s) => (
-              <SessionCard key={s.id} session={s} upcoming />
-            ))}
+            {upcoming.map((s) => <SessionCard key={s.id} session={s} upcoming />)}
           </div>
         </div>
       )}
@@ -67,9 +65,7 @@ export default function LiveSessionsPage() {
         <div>
           <h2 className="font-semibold mb-3 text-muted-foreground">Sesiones pasadas</h2>
           <div className="space-y-3">
-            {past.map((s) => (
-              <SessionCard key={s.id} session={s} />
-            ))}
+            {past.map((s) => <SessionCard key={s.id} session={s} />)}
           </div>
         </div>
       )}
@@ -78,7 +74,11 @@ export default function LiveSessionsPage() {
 }
 
 function SessionCard({ session, upcoming }: { session: LiveSession; upcoming?: boolean }) {
-  const date = new Date(session.scheduled_at);
+  const start = new Date(session.starts_at);
+  const end = session.ends_at ? new Date(session.ends_at) : null;
+  const durationMs = end ? end.getTime() - start.getTime() : null;
+  const durationMin = durationMs ? Math.round(durationMs / 60000) : null;
+
   return (
     <Card className={upcoming ? "border-primary/40" : "opacity-75"}>
       <CardHeader className="pb-2">
@@ -98,17 +98,17 @@ function SessionCard({ session, upcoming }: { session: LiveSession; upcoming?: b
         <div className="flex items-center gap-4 text-sm text-muted-foreground">
           <span className="flex items-center gap-1.5">
             <Calendar className="h-4 w-4" />
-            {date.toLocaleDateString("es", { weekday: "long", day: "numeric", month: "long" })}
+            {start.toLocaleDateString("es", { weekday: "long", day: "numeric", month: "long" })}
           </span>
           <span className="flex items-center gap-1.5">
             <Clock className="h-4 w-4" />
-            {date.toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" })}
-            {" · "}{session.duration_minutes} min
+            {start.toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" })}
+            {durationMin && ` · ${durationMin} min`}
           </span>
         </div>
         {upcoming && (
           <Button size="sm" asChild>
-            <a href={session.meet_url} target="_blank" rel="noopener noreferrer">
+            <a href={session.meeting_url} target="_blank" rel="noopener noreferrer">
               <ExternalLink className="mr-2 h-4 w-4" />
               Unirme a la sesión
             </a>

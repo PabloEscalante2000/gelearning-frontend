@@ -2,20 +2,21 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { BookOpen, MessageSquare, Video, TrendingUp, Loader2, Users } from "lucide-react";
+import { BookOpen, MessageSquare, Video, TrendingUp, Loader2, Users, Award } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import ModuleAccordion from "@/components/courses/ModuleAccordion";
 import ProgressBar from "@/components/courses/ProgressBar";
-import { useCourse, useCourseModules, useCourseProgress, useEnrollCourse } from "@/hooks/useCourses";
+import { useCourse, useCourseProgress } from "@/hooks/useCourses";
 
 export default function CourseDetailPage() {
   const { courseId } = useParams<{ courseId: string }>();
   const { data: course, isLoading } = useCourse(courseId);
-  const { data: modules = [] } = useCourseModules(courseId);
   const { data: progress } = useCourseProgress(courseId);
-  const enroll = useEnrollCourse();
+
+  // modules come embedded in course detail response
+  const modules = course?.modules ?? [];
 
   if (isLoading) {
     return (
@@ -28,6 +29,8 @@ export default function CourseDetailPage() {
   if (!course) {
     return <p className="text-muted-foreground">Curso no encontrado.</p>;
   }
+
+  const totalLessons = modules.reduce((acc, m) => acc + (m.lessons?.length ?? 0), 0);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -46,17 +49,17 @@ export default function CourseDetailPage() {
             </span>
             <span className="flex items-center gap-1.5">
               <BookOpen className="h-4 w-4" />
-              {course.lessons_count} lecciones
+              {totalLessons} lecciones
             </span>
           </div>
         </div>
 
-        {course.enrolled && progress && (
+        {progress && (
           <div className="rounded-lg border p-4 bg-muted/30">
             <p className="text-sm font-medium mb-2">Tu progreso</p>
-            <ProgressBar value={progress.progress_percentage} />
+            <ProgressBar value={progress.percent} />
             <p className="text-xs text-muted-foreground mt-2">
-              {progress.completed_lessons}/{progress.total_lessons} lecciones completadas
+              {progress.completed}/{progress.total} lecciones completadas
             </p>
           </div>
         )}
@@ -82,6 +85,14 @@ export default function CourseDetailPage() {
               Mi progreso
             </Button>
           </Link>
+          {progress?.percent === 100 && (
+            <Link href={`/courses/${courseId}/certificate/`}>
+              <Button variant="outline" size="sm">
+                <Award className="mr-2 h-4 w-4" />
+                Mi certificado
+              </Button>
+            </Link>
+          )}
         </div>
 
         <div>
@@ -96,26 +107,14 @@ export default function CourseDetailPage() {
 
       <div className="space-y-4">
         <div className="rounded-lg border p-6 space-y-4 sticky top-24">
-          {course.enrolled ? (
-            <>
-              <p className="text-sm font-medium text-green-600">✓ Inscrito</p>
-              {modules[0]?.lessons[0] && (
-                <Link
-                  href={`/courses/${courseId}/modules/${modules[0].id}/lessons/${modules[0].lessons[0].id}/`}
-                >
-                  <Button className="w-full">Continuar curso</Button>
-                </Link>
-              )}
-            </>
-          ) : (
-            <Button
-              className="w-full"
-              onClick={() => enroll.mutate(course.id)}
-              disabled={enroll.isPending}
+          {modules[0]?.lessons?.[0] && (
+            <Link
+              href={`/courses/${courseId}/modules/${modules[0].id}/lessons/${modules[0].lessons![0].id}/`}
             >
-              {enroll.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Inscribirme
-            </Button>
+              <Button className="w-full">
+                {progress && progress.completed > 0 ? "Continuar curso" : "Empezar curso"}
+              </Button>
+            </Link>
           )}
 
           <Separator />
@@ -123,11 +122,11 @@ export default function CourseDetailPage() {
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Módulos</span>
-              <span>{course.modules_count}</span>
+              <span>{modules.length}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Lecciones</span>
-              <span>{course.lessons_count}</span>
+              <span>{totalLessons}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Instructor</span>

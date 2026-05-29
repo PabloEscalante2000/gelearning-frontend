@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, Loader2, Send } from "lucide-react";
+import { ArrowLeft, Loader2, Send, Lock } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -10,15 +10,17 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { useForumThread, useForumReplies, useCreateReply } from "@/hooks/useForum";
+import { Badge } from "@/components/ui/badge";
+import { useForumThread, useCreateReply } from "@/hooks/useForum";
 
 const replySchema = z.object({ body: z.string().min(5, "Mínimo 5 caracteres") });
 type ReplyForm = z.infer<typeof replySchema>;
 
 export default function ForumThreadPage() {
   const { courseId, threadId } = useParams<{ courseId: string; threadId: string }>();
-  const { data: thread, isLoading: loadingThread } = useForumThread(courseId, threadId);
-  const { data: replies = [] } = useForumReplies(courseId, threadId);
+
+  // Thread detail includes replies[] directly from the API
+  const { data: thread, isLoading } = useForumThread(courseId, threadId);
   const createReply = useCreateReply();
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<ReplyForm>({
@@ -30,13 +32,15 @@ export default function ForumThreadPage() {
     reset();
   };
 
-  if (loadingThread) {
+  if (isLoading) {
     return (
       <div className="flex justify-center py-16">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
+
+  const replies = thread?.replies ?? [];
 
   return (
     <div className="space-y-6 max-w-3xl">
@@ -62,6 +66,12 @@ export default function ForumThreadPage() {
                   {new Date(thread.created_at).toLocaleString("es")}
                 </p>
               </div>
+              {thread.is_closed && (
+                <Badge variant="outline" className="ml-auto">
+                  <Lock className="h-3 w-3 mr-1" />
+                  Cerrado
+                </Badge>
+              )}
             </div>
             <CardTitle className="text-xl">{thread.title}</CardTitle>
           </CardHeader>
@@ -96,23 +106,30 @@ export default function ForumThreadPage() {
         ))}
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="flex gap-3">
-        <div className="flex-1 space-y-1">
-          <textarea
-            className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            placeholder="Escribe tu respuesta..."
-            {...register("body")}
-          />
-          {errors.body && <p className="text-xs text-destructive">{errors.body.message}</p>}
+      {thread?.is_closed ? (
+        <div className="rounded-md bg-muted px-4 py-3 text-sm text-muted-foreground flex items-center gap-2">
+          <Lock className="h-4 w-4" />
+          Este hilo está cerrado. No se pueden agregar nuevas respuestas.
         </div>
-        <Button type="submit" size="icon" disabled={createReply.isPending} className="self-start mt-0.5">
-          {createReply.isPending ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Send className="h-4 w-4" />
-          )}
-        </Button>
-      </form>
+      ) : (
+        <form onSubmit={handleSubmit(onSubmit)} className="flex gap-3">
+          <div className="flex-1 space-y-1">
+            <textarea
+              className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              placeholder="Escribe tu respuesta..."
+              {...register("body")}
+            />
+            {errors.body && <p className="text-xs text-destructive">{errors.body.message}</p>}
+          </div>
+          <Button type="submit" size="icon" disabled={createReply.isPending} className="self-start mt-0.5">
+            {createReply.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Send className="h-4 w-4" />
+            )}
+          </Button>
+        </form>
+      )}
     </div>
   );
 }

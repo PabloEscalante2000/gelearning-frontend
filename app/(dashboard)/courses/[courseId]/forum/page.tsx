@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { MessageSquare, Plus, Loader2, ArrowLeft } from "lucide-react";
+import { MessageSquare, Plus, Loader2, ArrowLeft, Pin } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { useForumThreads, useCreateThread } from "@/hooks/useForum";
 
 const threadSchema = z.object({
@@ -22,9 +23,8 @@ type ThreadForm = z.infer<typeof threadSchema>;
 export default function ForumPage() {
   const { courseId } = useParams<{ courseId: string }>();
   const [showForm, setShowForm] = useState(false);
-  const { data, isLoading } = useForumThreads(courseId);
+  const { data: threads = [], isLoading } = useForumThreads(courseId);
   const createThread = useCreateThread();
-  const threads = data?.data ?? [];
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<ThreadForm>({
     resolver: zodResolver(threadSchema),
@@ -103,9 +103,22 @@ export default function ForumPage() {
       <div className="space-y-3">
         {threads.map((thread) => (
           <Link key={thread.id} href={`/courses/${courseId}/forum/${thread.id}/`}>
-            <Card className="hover:shadow-md transition-shadow">
+            <Card className={`hover:shadow-md transition-shadow ${thread.is_pinned ? "border-primary/40" : ""}`}>
               <CardHeader className="pb-2">
-                <CardTitle className="text-base">{thread.title}</CardTitle>
+                <div className="flex items-start justify-between gap-2">
+                  <CardTitle className="text-base">{thread.title}</CardTitle>
+                  <div className="flex gap-1 shrink-0">
+                    {thread.is_pinned && (
+                      <Badge variant="secondary" className="text-xs">
+                        <Pin className="h-2.5 w-2.5 mr-1" />
+                        Fijado
+                      </Badge>
+                    )}
+                    {thread.is_closed && (
+                      <Badge variant="outline" className="text-xs">Cerrado</Badge>
+                    )}
+                  </div>
+                </div>
                 <CardDescription>
                   {thread.user.name} · {new Date(thread.created_at).toLocaleDateString("es")}
                 </CardDescription>
@@ -114,7 +127,7 @@ export default function ForumPage() {
                 <p className="text-sm text-muted-foreground line-clamp-2">{thread.body}</p>
                 <p className="text-xs text-muted-foreground mt-2">
                   <MessageSquare className="inline h-3 w-3 mr-1" />
-                  {thread.replies_count} respuestas
+                  {thread.replies_count ?? 0} respuestas
                 </p>
               </CardContent>
             </Card>

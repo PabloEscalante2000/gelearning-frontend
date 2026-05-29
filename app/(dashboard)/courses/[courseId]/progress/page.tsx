@@ -2,18 +2,20 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, CheckCircle2, Circle, Loader2 } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Circle, Loader2, Award } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import ProgressBar from "@/components/courses/ProgressBar";
-import { useCourseModules, useCourseProgress } from "@/hooks/useCourses";
+import { useCourse, useCourseProgress, useCourseCertificate } from "@/hooks/useCourses";
 
 export default function CourseProgressPage() {
   const { courseId } = useParams<{ courseId: string }>();
   const { data: progress, isLoading: loadingProgress } = useCourseProgress(courseId);
-  const { data: modules = [], isLoading: loadingModules } = useCourseModules(courseId);
+  const { data: course, isLoading: loadingCourse } = useCourse(courseId);
+  const { data: certificate } = useCourseCertificate(courseId);
+  const modules = course?.modules ?? [];
 
-  const isLoading = loadingProgress || loadingModules;
+  const isLoading = loadingProgress || loadingCourse;
 
   return (
     <div className="space-y-6 max-w-2xl">
@@ -40,43 +42,66 @@ export default function CourseProgressPage() {
               <CardTitle>Progreso general</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <ProgressBar value={progress.progress_percentage} />
+              {/* API returns: total, completed, percent */}
+              <ProgressBar value={progress.percent} />
               <div className="grid grid-cols-3 gap-4 text-center">
                 <div>
                   <p className="text-2xl font-bold text-primary">
-                    {Math.round(progress.progress_percentage)}%
+                    {Math.round(progress.percent)}%
                   </p>
                   <p className="text-xs text-muted-foreground">Completado</p>
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">{progress.completed_lessons}</p>
+                  <p className="text-2xl font-bold">{progress.completed}</p>
                   <p className="text-xs text-muted-foreground">Lecciones vistas</p>
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">{progress.total_lessons}</p>
+                  <p className="text-2xl font-bold">{progress.total}</p>
                   <p className="text-xs text-muted-foreground">Total lecciones</p>
                 </div>
               </div>
+
+              {certificate && (
+                <div className="rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 p-4 flex items-center gap-3">
+                  <Award className="h-6 w-6 text-green-600 shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium text-green-700 dark:text-green-400">
+                      ¡Certificado obtenido!
+                    </p>
+                    <a
+                      href={certificate.certificate_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-green-600 underline"
+                    >
+                      Descargar certificado
+                    </a>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 
           <div className="space-y-4">
             {modules.map((module) => {
-              const completedCount = module.lessons.filter((l) => l.completed).length;
-              const moduleProgress = (completedCount / (module.lessons.length || 1)) * 100;
+              const lessons = module.lessons ?? [];
+              const completedCount = lessons.filter((l) => l.completed).length;
+              const moduleProgress = lessons.length
+                ? (completedCount / lessons.length) * 100
+                : 0;
               return (
                 <Card key={module.id}>
                   <CardHeader className="pb-3">
                     <div className="flex justify-between items-center">
                       <CardTitle className="text-sm font-medium">{module.title}</CardTitle>
                       <span className="text-xs text-muted-foreground">
-                        {completedCount}/{module.lessons.length}
+                        {completedCount}/{lessons.length}
                       </span>
                     </div>
                     <ProgressBar value={moduleProgress} showLabel={false} />
                   </CardHeader>
                   <CardContent className="pt-0 space-y-1">
-                    {module.lessons.map((lesson) => (
+                    {lessons.map((lesson) => (
                       <div key={lesson.id} className="flex items-center gap-2 text-sm py-1">
                         {lesson.completed ? (
                           <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />

@@ -1,30 +1,31 @@
 "use client";
 
 import { useEffect } from "react";
+import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { GraduationCap, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useLogin } from "@/hooks/useAuth";
+import { useRegister } from "@/hooks/useAuth";
 import { useAuthStore } from "@/store/useAuthStore";
 
-const loginSchema = z.object({
+const registerSchema = z.object({
+  name: z.string().min(2, "Mínimo 2 caracteres"),
   email: z.string().email("Email inválido"),
-  password: z.string().min(6, "Mínimo 6 caracteres"),
+  password: z.string().min(8, "Mínimo 8 caracteres"),
 });
 
-type LoginForm = z.infer<typeof loginSchema>;
+type RegisterForm = z.infer<typeof registerSchema>;
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const router = useRouter();
   const token = useAuthStore((s) => s.token);
-  const { login, loading, error } = useLogin();
+  const { register: doRegister, loading, error } = useRegister();
 
   useEffect(() => {
     if (token) router.replace("/dashboard/");
@@ -34,7 +35,7 @@ export default function LoginPage() {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<LoginForm>({ resolver: zodResolver(loginSchema) });
+  } = useForm<RegisterForm>({ resolver: zodResolver(registerSchema) });
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-800 p-4">
@@ -45,12 +46,21 @@ export default function LoginPage() {
               <GraduationCap className="h-8 w-8 text-primary" />
             </div>
           </div>
-          <CardTitle className="text-2xl">Bienvenido a GELearning</CardTitle>
-          <CardDescription>Inicia sesión para continuar</CardDescription>
+          <CardTitle className="text-2xl">Crear cuenta</CardTitle>
+          <CardDescription>Regístrate para acceder a los cursos</CardDescription>
         </CardHeader>
 
         <CardContent>
-          <form onSubmit={handleSubmit((d) => login(d.email, d.password))} className="space-y-4">
+          <form
+            onSubmit={handleSubmit((d) => doRegister(d.name, d.email, d.password))}
+            className="space-y-4"
+          >
+            <div className="space-y-2">
+              <Label htmlFor="name">Nombre completo</Label>
+              <Input id="name" type="text" placeholder="Tu nombre" {...register("name")} />
+              {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input id="email" type="email" placeholder="correo@ejemplo.com" {...register("email")} />
@@ -59,7 +69,7 @@ export default function LoginPage() {
 
             <div className="space-y-2">
               <Label htmlFor="password">Contraseña</Label>
-              <Input id="password" type="password" placeholder="••••••••" {...register("password")} />
+              <Input id="password" type="password" placeholder="Mínimo 8 caracteres" {...register("password")} />
               {errors.password && <p className="text-xs text-destructive">{errors.password.message}</p>}
             </div>
 
@@ -71,7 +81,7 @@ export default function LoginPage() {
 
             <Button type="submit" className="w-full" disabled={loading}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Iniciar sesión
+              Crear cuenta
             </Button>
 
             <div className="relative">
@@ -79,7 +89,7 @@ export default function LoginPage() {
                 <span className="w-full border-t" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">o continúa con</span>
+                <span className="bg-background px-2 text-muted-foreground">o regístrate con</span>
               </div>
             </div>
 
@@ -101,9 +111,9 @@ export default function LoginPage() {
             </Button>
 
             <p className="text-center text-sm text-muted-foreground">
-              ¿No tienes cuenta?{" "}
-              <Link href="/register/" className="text-primary hover:underline font-medium">
-                Regístrate
+              ¿Ya tienes cuenta?{" "}
+              <Link href="/login/" className="text-primary hover:underline font-medium">
+                Inicia sesión
               </Link>
             </p>
           </form>

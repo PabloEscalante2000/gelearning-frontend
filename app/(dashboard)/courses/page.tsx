@@ -10,7 +10,7 @@ export default function CoursesPage() {
   const [search, setSearch] = useState("");
   const { data, isLoading, isError } = useCourses();
 
-  const courses = data?.data ?? [];
+  const courses = data ?? [];
   const filtered = courses.filter(
     (c) =>
       c.title.toLowerCase().includes(search.toLowerCase()) ||
@@ -23,7 +23,7 @@ export default function CoursesPage() {
         <div>
           <h1 className="text-2xl font-bold">Mis Cursos</h1>
           <p className="text-muted-foreground text-sm mt-1">
-            {data?.meta?.total ?? 0} cursos disponibles
+            {courses.length} cursos disponibles
           </p>
         </div>
         <div className="relative sm:ml-auto sm:w-64">

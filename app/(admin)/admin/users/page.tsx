@@ -1,30 +1,78 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, Search, ShieldCheck } from "lucide-react";
+import { Loader2, Search, ShieldCheck, BookPlus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { useUsers, useUpdateUserRole } from "@/hooks/useUsers";
+import { useUsers, useUpdateUser } from "@/hooks/useUsers";
+import { useCourses, useEnrollStudent } from "@/hooks/useCourses";
+import type { User } from "@/types";
 
 const roleLabel: Record<string, { label: string; variant: "default" | "secondary" | "outline" }> = {
-  admin: { label: "Admin", variant: "default" },
+  admin:      { label: "Admin",      variant: "default"   },
   instructor: { label: "Instructor", variant: "secondary" },
-  student: { label: "Estudiante", variant: "outline" },
+  student:    { label: "Estudiante", variant: "outline"   },
 };
+
+function EnrollDropdown({ user }: { user: User }) {
+  const { data: courses = [] } = useCourses();
+  const enroll = useEnrollStudent();
+  const [done, setDone] = useState<number | null>(null);
+
+  const handleEnroll = async (courseId: number) => {
+    try {
+      await enroll.mutateAsync({ user_id: user.id, course_id: courseId });
+      setDone(courseId);
+      setTimeout(() => setDone(null), 2000);
+    } catch {
+      // 409 = already enrolled, ignore
+    }
+  };
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="sm">
+          <BookPlus className="h-4 w-4 mr-1" />
+          Inscribir
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className="w-56 max-h-72 overflow-y-auto">
+        <DropdownMenuLabel className="text-xs text-muted-foreground">
+          Inscribir a {user.name.split(" ")[0]} en...
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        {courses.length === 0 && (
+          <DropdownMenuItem disabled>Sin cursos disponibles</DropdownMenuItem>
+        )}
+        {courses.map((course) => (
+          <DropdownMenuItem
+            key={course.id}
+            onClick={() => handleEnroll(course.id)}
+            disabled={enroll.isPending}
+          >
+            {done === course.id ? "✓ Inscrito" : course.title}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
 
 export default function AdminUsersPage() {
   const [search, setSearch] = useState("");
-  const { data, isLoading } = useUsers();
-  const updateRole = useUpdateUserRole();
-  const users = data?.data ?? [];
+  const { data: users = [], isLoading } = useUsers();
+  const updateUser = useUpdateUser();
 
   const filtered = users.filter(
     (u) =>
@@ -37,7 +85,7 @@ export default function AdminUsersPage() {
       <div className="flex flex-col sm:flex-row sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold">Usuarios</h1>
-          <p className="text-muted-foreground text-sm mt-1">{data?.meta?.total ?? 0} usuarios registrados</p>
+          <p className="text-muted-foreground text-sm mt-1">{users.length} usuarios registrados</p>
         </div>
         <div className="relative sm:ml-auto sm:w-64">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -57,7 +105,7 @@ export default function AdminUsersPage() {
       )}
 
       {!isLoading && (
-        <div className="rounded-lg border overflow-hidden">
+        <div className="rounded-lg border overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-muted/50">
               <tr>
@@ -75,6 +123,7 @@ export default function AdminUsersPage() {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         <Avatar className="h-8 w-8">
+                          <AvatarImage src={user.avatar_url ?? ""} alt={user.name} />
                           <AvatarFallback>
                             {user.name.substring(0, 2).toUpperCase()}
                           </AvatarFallback>
@@ -82,30 +131,43 @@ export default function AdminUsersPage() {
                         <span className="font-medium">{user.name}</span>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">{user.email}</td>
+                    <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">
+                      {user.email}
+                    </td>
                     <td className="px-4 py-3">
                       <Badge variant={role.variant}>{role.label}</Badge>
                     </td>
                     <td className="px-4 py-3">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm">
-                            <ShieldCheck className="h-4 w-4 mr-1" />
-                            Cambiar rol
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent>
-                          {["admin", "instructor", "student"].map((r) => (
-                            <DropdownMenuItem
-                              key={r}
-                              onClick={() => updateRole.mutate({ userId: user.id, role: r })}
-                              disabled={user.role === r}
-                            >
-                              {roleLabel[r]?.label ?? r}
-                            </DropdownMenuItem>
-                          ))}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <div className="flex items-center gap-1 flex-wrap">
+                        {/* Change role */}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <ShieldCheck className="h-4 w-4 mr-1" />
+                              Rol
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent>
+                            <DropdownMenuLabel className="text-xs text-muted-foreground">
+                              Cambiar rol
+                            </DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            {(["admin", "instructor", "student"] as const).map((r) => (
+                              <DropdownMenuItem
+                                key={r}
+                                onClick={() => updateUser.mutate({ userId: user.id, role: r })}
+                                disabled={user.role === r || updateUser.isPending}
+                              >
+                                {roleLabel[r]?.label ?? r}
+                                {user.role === r && " ✓"}
+                              </DropdownMenuItem>
+                            ))}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+
+                        {/* Enroll in course */}
+                        <EnrollDropdown user={user} />
+                      </div>
                     </td>
                   </tr>
                 );

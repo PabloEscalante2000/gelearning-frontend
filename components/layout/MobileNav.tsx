@@ -45,18 +45,32 @@ export default function MobileNav() {
       {open && (
         <div className="fixed inset-0 z-50 flex">
           <div className="fixed inset-0 bg-black/50" onClick={() => setOpen(false)} />
-          <div className="relative flex flex-col w-72 bg-slate-900 text-slate-100 min-h-screen p-4 z-10">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-2">
-                <GraduationCap className="h-6 w-6 text-primary" />
-                <span className="text-lg font-bold">GELearning</span>
+          <div
+            className="relative flex flex-col w-72 min-h-screen p-0 z-10"
+            style={{ background: "hsl(var(--sidebar))", color: "hsl(var(--sidebar-foreground))" }}
+          >
+            <div
+              className="flex items-center justify-between px-5 py-4"
+              style={{ borderBottom: "1px solid hsl(var(--sidebar-border))" }}
+            >
+              <div className="flex items-center gap-2.5">
+                <div
+                  className="h-7 w-7 rounded-lg flex items-center justify-center"
+                  style={{ background: "hsl(var(--primary))" }}
+                >
+                  <GraduationCap className="h-4 w-4 text-white" />
+                </div>
+                <span className="font-semibold">GELearning</span>
               </div>
-              <Button variant="ghost" size="icon" className="text-slate-300" onClick={() => setOpen(false)}>
+              <button
+                className="opacity-60 hover:opacity-100 transition-opacity"
+                onClick={() => setOpen(false)}
+              >
                 <X className="h-5 w-5" />
-              </Button>
+              </button>
             </div>
 
-            <nav className="space-y-1">
+            <nav className="flex-1 px-3 py-4 space-y-0.5">
               {navItems.map(({ href, label, icon: Icon }) => {
                 const active = pathname === href || pathname.startsWith(href.replace(/\/$/, "/"));
                 return (
@@ -65,11 +79,10 @@ export default function MobileNav() {
                     href={href}
                     onClick={() => setOpen(false)}
                     className={cn(
-                      "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-                      active
-                        ? "bg-primary text-primary-foreground"
-                        : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                      "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all",
+                      active ? "text-white opacity-100" : "opacity-70 hover:opacity-100"
                     )}
+                    style={active ? { background: "hsl(var(--sidebar-primary))" } : {}}
                   >
                     <Icon className="h-4 w-4" />
                     {label}

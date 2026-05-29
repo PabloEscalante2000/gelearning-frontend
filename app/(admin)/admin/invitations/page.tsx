@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -10,10 +11,11 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useInvitations, useSendInvitation } from "@/hooks/useUsers";
+import { useCourses } from "@/hooks/useCourses";
 
 const inviteSchema = z.object({
   email: z.string().email("Email inválido"),
-  role: z.enum(["student", "instructor", "admin"]),
+  course_id: z.string().min(1, "Selecciona un curso"),
 });
 type InviteForm = z.infer<typeof inviteSchema>;
 
@@ -23,27 +25,38 @@ const statusVariant: Record<string, "default" | "secondary" | "outline" | "destr
   expired: "destructive",
 };
 
-const statusLabel = { pending: "Pendiente", accepted: "Aceptada", expired: "Expirada" };
+const statusLabel: Record<string, string> = {
+  pending: "Pendiente",
+  accepted: "Aceptada",
+  expired: "Expirada",
+};
 
 export default function InvitationsPage() {
-  const { data: invitations = [], isLoading } = useInvitations();
+  const [selectedCourseId, setSelectedCourseId] = useState<string>("");
+  const { data: courses = [] } = useCourses();
+  const { data: invitations = [], isLoading } = useInvitations(selectedCourseId);
   const sendInvite = useSendInvitation();
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<InviteForm>({
+  const { register, handleSubmit, reset, watch, formState: { errors } } = useForm<InviteForm>({
     resolver: zodResolver(inviteSchema),
-    defaultValues: { role: "student" },
   });
 
   const onSubmit = async (data: InviteForm) => {
-    await sendInvite.mutateAsync(data);
-    reset();
+    await sendInvite.mutateAsync({
+      email: data.email,
+      course_id: Number(data.course_id),
+    });
+    setSelectedCourseId(data.course_id);
+    reset({ email: "", course_id: data.course_id });
   };
 
   return (
     <div className="space-y-8">
       <div>
         <h1 className="text-2xl font-bold">Invitaciones</h1>
-        <p className="text-muted-foreground text-sm mt-1">Invita a usuarios a la plataforma.</p>
+        <p className="text-muted-foreground text-sm mt-1">
+          Invita a usuarios a un curso concreto.
+        </p>
       </div>
 
       <Card className="max-w-md">
@@ -52,27 +65,38 @@ export default function InvitationsPage() {
             <Mail className="h-5 w-5" />
             Enviar invitación
           </CardTitle>
-          <CardDescription>El usuario recibirá un correo con el enlace de registro.</CardDescription>
+          <CardDescription>
+            El usuario recibirá un email con el enlace de inscripción al curso.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" placeholder="correo@ejemplo.com" {...register("email")} />
-              {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
+              <Label htmlFor="course_id">Curso</Label>
+              <select
+                id="course_id"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                {...register("course_id")}
+              >
+                <option value="">Selecciona un curso...</option>
+                {courses.map((c) => (
+                  <option key={c.id} value={c.id}>{c.title}</option>
+                ))}
+              </select>
+              {errors.course_id && (
+                <p className="text-xs text-destructive">{errors.course_id.message}</p>
+              )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="role">Rol</Label>
-              <select
-                id="role"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                {...register("role")}
-              >
-                <option value="student">Estudiante</option>
-                <option value="instructor">Instructor</option>
-                <option value="admin">Admin</option>
-              </select>
+              <Label htmlFor="email">Email del destinatario</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="correo@ejemplo.com"
+                {...register("email")}
+              />
+              {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
             </div>
 
             {sendInvite.isSuccess && (
@@ -95,24 +119,41 @@ export default function InvitationsPage() {
       </Card>
 
       <div>
-        <h2 className="font-semibold mb-4">Invitaciones enviadas</h2>
-        {isLoading && (
+        <div className="flex items-center gap-4 mb-4">
+          <h2 className="font-semibold">Invitaciones por curso</h2>
+          <select
+            className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm focus-visible:outline-none"
+            value={selectedCourseId}
+            onChange={(e) => setSelectedCourseId(e.target.value)}
+          >
+            <option value="">Selecciona un curso...</option>
+            {courses.map((c) => (
+              <option key={c.id} value={c.id}>{c.title}</option>
+            ))}
+          </select>
+        </div>
+
+        {!selectedCourseId && (
+          <p className="text-muted-foreground text-sm">Selecciona un curso para ver sus invitaciones.</p>
+        )}
+
+        {selectedCourseId && isLoading && (
           <div className="flex justify-center py-8">
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
           </div>
         )}
-        {!isLoading && invitations.length === 0 && (
-          <p className="text-muted-foreground text-sm">No hay invitaciones enviadas.</p>
+
+        {selectedCourseId && !isLoading && invitations.length === 0 && (
+          <p className="text-muted-foreground text-sm">No hay invitaciones para este curso.</p>
         )}
-        {!isLoading && invitations.length > 0 && (
+
+        {selectedCourseId && !isLoading && invitations.length > 0 && (
           <div className="rounded-lg border overflow-hidden">
             <table className="w-full text-sm">
               <thead className="bg-muted/50">
                 <tr>
                   <th className="text-left px-4 py-3 font-medium">Email</th>
-                  <th className="text-left px-4 py-3 font-medium">Rol</th>
                   <th className="text-left px-4 py-3 font-medium">Estado</th>
-                  <th className="text-left px-4 py-3 font-medium hidden sm:table-cell">Enviada por</th>
                   <th className="text-left px-4 py-3 font-medium hidden sm:table-cell">Expira</th>
                 </tr>
               </thead>
@@ -120,14 +161,10 @@ export default function InvitationsPage() {
                 {invitations.map((inv) => (
                   <tr key={inv.id} className="hover:bg-muted/30">
                     <td className="px-4 py-3">{inv.email}</td>
-                    <td className="px-4 py-3 capitalize">{inv.role}</td>
                     <td className="px-4 py-3">
                       <Badge variant={statusVariant[inv.status]}>
                         {statusLabel[inv.status] ?? inv.status}
                       </Badge>
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">
-                      {inv.invited_by.name}
                     </td>
                     <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">
                       {new Date(inv.expires_at).toLocaleDateString("es")}

@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, CheckCircle, Loader2 } from "lucide-react";
+import { ArrowLeft, CheckCircle, Loader2, ExternalLink, FileIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import VideoPlayer from "@/components/courses/VideoPlayer";
 import PdfViewer from "@/components/courses/PdfViewer";
 import ModuleAccordion from "@/components/courses/ModuleAccordion";
 import { useLesson, useCompleteLesson } from "@/hooks/useLessons";
-import { useCourseModules } from "@/hooks/useCourses";
+import { useCourse } from "@/hooks/useCourses";
 
 export default function LessonPage() {
   const { courseId, moduleId, lessonId } = useParams<{
@@ -17,8 +17,9 @@ export default function LessonPage() {
     lessonId: string;
   }>();
 
-  const { data: lesson, isLoading } = useLesson(courseId, moduleId, lessonId);
-  const { data: modules = [] } = useCourseModules(courseId);
+  const { data: lesson, isLoading } = useLesson(moduleId, lessonId);
+  const { data: course } = useCourse(courseId);
+  const modules = course?.modules ?? [];
   const complete = useCompleteLesson();
 
   if (isLoading) {
@@ -36,30 +37,45 @@ export default function LessonPage() {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
       <div className="lg:col-span-3 space-y-4">
-        <div className="flex items-center gap-3">
-          <Link href={`/courses/${courseId}/`}>
-            <Button variant="ghost" size="sm">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Volver al curso
-            </Button>
-          </Link>
-        </div>
+        <Link href={`/courses/${courseId}/`}>
+          <Button variant="ghost" size="sm">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Volver al curso
+          </Button>
+        </Link>
 
         <h1 className="text-2xl font-bold">{lesson.title}</h1>
 
-        {lesson.type === "video" && lesson.content_url && (
+        {lesson.type === "video" && (
           <VideoPlayer url={lesson.content_url} title={lesson.title} />
         )}
 
-        {lesson.type === "pdf" && lesson.content_url && (
+        {lesson.type === "pdf" && (
           <PdfViewer url={lesson.content_url} title={lesson.title} />
         )}
 
-        {(lesson.type === "text" || lesson.type === "quiz") && lesson.content && (
-          <div
-            className="prose prose-sm max-w-none"
-            dangerouslySetInnerHTML={{ __html: lesson.content }}
-          />
+        {lesson.type === "word" && (
+          <div className="rounded-lg border p-6 text-center space-y-3">
+            <FileIcon className="h-12 w-12 mx-auto text-blue-500" />
+            <p className="font-medium">{lesson.title}</p>
+            <Button asChild>
+              <a href={lesson.content_url} target="_blank" rel="noopener noreferrer" download>
+                Descargar documento Word
+              </a>
+            </Button>
+          </div>
+        )}
+
+        {lesson.type === "link" && (
+          <div className="rounded-lg border p-6 text-center space-y-3">
+            <ExternalLink className="h-12 w-12 mx-auto text-primary" />
+            <p className="font-medium">{lesson.title}</p>
+            <Button asChild>
+              <a href={lesson.content_url} target="_blank" rel="noopener noreferrer">
+                Abrir enlace externo
+              </a>
+            </Button>
+          </div>
         )}
 
         <div className="flex justify-end pt-4">
@@ -70,7 +86,7 @@ export default function LessonPage() {
             </div>
           ) : (
             <Button
-              onClick={() => complete.mutate({ courseId, moduleId, lessonId })}
+              onClick={() => complete.mutate({ lessonId, courseId })}
               disabled={complete.isPending}
             >
               {complete.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

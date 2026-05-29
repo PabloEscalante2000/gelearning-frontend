@@ -19,7 +19,7 @@ const statusLabel = { published: "Publicado", draft: "Borrador", archived: "Arch
 export default function AdminCoursesPage() {
   const [search, setSearch] = useState("");
   const { data, isLoading } = useCourses();
-  const courses = data?.data ?? [];
+  const courses = data ?? [];
 
   const filtered = courses.filter(
     (c) => c.title.toLowerCase().includes(search.toLowerCase())
@@ -30,7 +30,7 @@ export default function AdminCoursesPage() {
       <div className="flex flex-col sm:flex-row sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold">Gestionar Cursos</h1>
-          <p className="text-muted-foreground text-sm mt-1">{data?.meta?.total ?? 0} cursos en total</p>
+          <p className="text-muted-foreground text-sm mt-1">{courses.length} cursos en total</p>
         </div>
         <div className="relative sm:w-64">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

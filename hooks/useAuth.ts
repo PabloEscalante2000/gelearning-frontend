@@ -16,14 +16,16 @@ export function useLogin() {
     setLoading(true);
     setError(null);
     try {
-      const { data } = await apiClient.post("/login", { email, password });
+      const { data } = await apiClient.post<{ token: string; user: import("@/types").User }>(
+        "/api/auth/login",
+        { email, password }
+      );
       setAuth(data.token, data.user);
       router.push("/dashboard/");
     } catch (err) {
-      if (axios.isAxiosError(err) && err.response?.status === 422) {
-        setError("Credenciales inválidas.");
-      } else if (axios.isAxiosError(err) && err.response?.status === 401) {
-        setError("Email o contraseña incorrectos.");
+      if (axios.isAxiosError(err)) {
+        const msg = err.response?.data?.message ?? err.response?.data ?? err.message;
+        setError(typeof msg === "string" ? msg : "Credenciales inválidas.");
       } else {
         setError("Error al conectar con el servidor.");
       }
@@ -41,12 +43,64 @@ export function useLogout() {
 
   return async () => {
     try {
-      await apiClient.post("/logout");
+      await apiClient.post("/api/auth/logout");
     } catch {
       // continue even if logout request fails
     } finally {
       clear();
       router.push("/login/");
+    }
+  };
+}
+
+export function useRegister() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const setAuth = useAuthStore((s) => s.setAuth);
+  const router = useRouter();
+
+  const register = async (name: string, email: string, password: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { data } = await apiClient.post<{ token: string; user: import("@/types").User }>(
+        "/api/auth/register",
+        { name, email, password, password_confirmation: password }
+      );
+      setAuth(data.token, data.user);
+      router.push("/dashboard/");
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        const serverErrors = err.response?.data?.errors as Record<string, string[]> | undefined;
+        if (serverErrors?.email) {
+          setError(serverErrors.email[0]);
+        } else {
+          const msg = err.response?.data?.message ?? err.message;
+          setError(typeof msg === "string" ? msg : "Error al registrarse.");
+        }
+      } else {
+        setError("Error al conectar con el servidor.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { register, loading, error };
+}
+
+export function useMe() {
+  const setAuth = useAuthStore((s) => s.setAuth);
+  const token = useAuthStore((s) => s.token);
+
+  return async () => {
+    if (!token) return;
+    try {
+      const { data } = await apiClient.get<import("@/types").User>("/api/auth/me");
+      const currentToken = useAuthStore.getState().token!;
+      setAuth(currentToken, data);
+    } catch {
+      // ignore
     }
   };
 }

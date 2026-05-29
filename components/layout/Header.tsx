@@ -41,12 +41,13 @@ export default function Header() {
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="relative h-9 w-9 rounded-full">
             <Avatar className="h-9 w-9">
-              <AvatarImage src={user?.avatar ?? ""} alt={user?.name ?? ""} />
+              {/* avatar_url is the correct field from the API */}
+              <AvatarImage src={user?.avatar_url ?? ""} alt={user?.name ?? ""} />
               <AvatarFallback>{initials}</AvatarFallback>
             </Avatar>
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuContent align="end" className="w-56 z-10">
           <DropdownMenuLabel>
             <p className="font-medium">{user?.name}</p>
             <p className="text-xs text-muted-foreground">{user?.email}</p>

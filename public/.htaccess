@@ -25,5 +25,8 @@ RewriteRule ^courses/([^/]+)/?$ /courses/0/index.html [L]
 # --- Admin: edición de curso ---
 RewriteRule ^admin/courses/([^/]+)/edit/?$ /admin/courses/0/edit/index.html [L]
 
+# --- Auth pages (login, register) ---
+RewriteRule ^register/?$ /register/index.html [L]
+
 # --- Fallback general: sirve index.html raíz para rutas no encontradas ---
 RewriteRule ^ /index.html [L]
