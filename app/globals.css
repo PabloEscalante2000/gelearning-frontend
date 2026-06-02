@@ -104,6 +104,8 @@
   --color-ring:                hsl(var(--ring));
   --color-card:                hsl(var(--card));
   --color-card-foreground:     hsl(var(--card-foreground));
+  --color-popover:             hsl(var(--popover));
+  --color-popover-foreground:  hsl(var(--popover-foreground));
 
   /* Font */
   --font-sans: var(--font-inter), system-ui, -apple-system, sans-serif;

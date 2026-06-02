@@ -1,6 +1,7 @@
 "use client";
 
-import { Bell, LogOut, User, Settings } from "lucide-react";
+import Link from "next/link";
+import { Bell, LogOut, User } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -53,13 +54,11 @@ export default function Header() {
             <p className="text-xs text-muted-foreground">{user?.email}</p>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem>
-            <User className="mr-2 h-4 w-4" />
-            Mi perfil
-          </DropdownMenuItem>
-          <DropdownMenuItem>
-            <Settings className="mr-2 h-4 w-4" />
-            Configuración
+          <DropdownMenuItem asChild>
+            <Link href="/profile/">
+              <User className="mr-2 h-4 w-4" />
+              Mi perfil
+            </Link>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem

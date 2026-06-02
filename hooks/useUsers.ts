@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import apiClient from "@/lib/axios";
-import type { User, Invitation } from "@/types";
+import type { User, Enrollment } from "@/types";
 
 export function useUsers(role?: string) {
   return useQuery({
@@ -16,12 +16,8 @@ export function useUsers(role?: string) {
 export function useCreateUser() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (payload: {
-      name: string;
-      email: string;
-      password: string;
-      role: string;
-    }) => apiClient.post("/api/v1/admin/users", payload),
+    mutationFn: (payload: { name: string; email: string; password: string; role: string }) =>
+      apiClient.post("/api/v1/admin/users", payload),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["users"] }),
   });
 }
@@ -51,27 +47,37 @@ export function useDeleteUser() {
   });
 }
 
-// ── Invitations ───────────────────────────────────────────────────────────────
-
-export function useInvitations(courseId?: string | number) {
+export function useUserEnrollments(userId?: number) {
   return useQuery({
-    queryKey: ["invitations", courseId],
+    queryKey: ["user-enrollments", userId],
     queryFn: async () => {
-      const params = courseId ? `?course_id=${courseId}` : "";
-      const { data } = await apiClient.get<Invitation[]>(`/api/v1/invitations${params}`);
+      const { data } = await apiClient.get<Enrollment[]>(
+        `/api/v1/admin/users/${userId}/enrollments`
+      );
       return data;
     },
-    enabled: !!courseId,
+    enabled: !!userId,
   });
 }
 
-export function useSendInvitation() {
+export function useEnrollUserInCourse(userId: number) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (payload: { email: string; course_id: number }) =>
-      apiClient.post("/api/v1/invitations", payload),
-    onSuccess: (_, { course_id }) => {
-      queryClient.invalidateQueries({ queryKey: ["invitations", course_id] });
+    mutationFn: (courseId: number) =>
+      apiClient.post("/api/v1/enrollments", { user_id: userId, course_id: courseId }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["user-enrollments", userId] });
+    },
+  });
+}
+
+export function useUnenrollUser() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ enrollmentId }: { enrollmentId: number; userId: number }) =>
+      apiClient.delete(`/api/v1/enrollments/${enrollmentId}`),
+    onSuccess: (_, { userId }) => {
+      queryClient.invalidateQueries({ queryKey: ["user-enrollments", userId] });
     },
   });
 }

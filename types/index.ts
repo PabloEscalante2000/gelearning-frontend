@@ -3,7 +3,6 @@
 export type UserRole = "admin" | "instructor" | "student";
 export type CourseStatus = "draft" | "published" | "archived";
 export type LessonType = "video" | "pdf" | "word" | "link";
-export type InvitationStatus = "pending" | "accepted" | "expired";
 
 // ── Core models ───────────────────────────────────────────────────────────────
 
@@ -74,6 +73,11 @@ export interface Enrollment {
   enrolled_by: number;
   enrolled_at: string;
   completed_at: string | null;
+  course?: {
+    id: number;
+    title: string;
+    status: CourseStatus;
+  };
 }
 
 export interface CourseProgress {
@@ -111,21 +115,6 @@ export interface ForumReply {
   user_id: number;
   user: User;
   body: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface Invitation {
-  id: number;
-  email: string;
-  course_id: number;
-  course?: Course;
-  invited_by: number;
-  invitedBy?: User;
-  token: string;
-  status: InvitationStatus;
-  expires_at: string;
-  accepted_at: string | null;
   created_at: string;
   updated_at: string;
 }

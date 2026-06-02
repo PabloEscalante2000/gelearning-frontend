@@ -12,7 +12,7 @@ export function useLogin() {
   const setAuth = useAuthStore((s) => s.setAuth);
   const router = useRouter();
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string, redirectUrl = "/dashboard/") => {
     setLoading(true);
     setError(null);
     try {
@@ -21,7 +21,7 @@ export function useLogin() {
         { email, password }
       );
       setAuth(data.token, data.user);
-      router.push("/dashboard/");
+      router.push(redirectUrl);
     } catch (err) {
       if (axios.isAxiosError(err)) {
         const msg = err.response?.data?.message ?? err.response?.data ?? err.message;
@@ -59,7 +59,7 @@ export function useRegister() {
   const setAuth = useAuthStore((s) => s.setAuth);
   const router = useRouter();
 
-  const register = async (name: string, email: string, password: string) => {
+  const register = async (name: string, email: string, password: string, redirectUrl = "/dashboard/") => {
     setLoading(true);
     setError(null);
     try {
@@ -68,7 +68,7 @@ export function useRegister() {
         { name, email, password, password_confirmation: password }
       );
       setAuth(data.token, data.user);
-      router.push("/dashboard/");
+      router.push(redirectUrl);
     } catch (err) {
       if (axios.isAxiosError(err)) {
         const serverErrors = err.response?.data?.errors as Record<string, string[]> | undefined;

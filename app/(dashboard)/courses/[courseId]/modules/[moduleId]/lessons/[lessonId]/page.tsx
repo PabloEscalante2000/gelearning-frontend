@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, CheckCircle, Loader2, ExternalLink, FileIcon } from "lucide-react";
+import { ArrowLeft, CheckCircle, Loader2, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import VideoPlayer from "@/components/courses/VideoPlayer";
 import PdfViewer from "@/components/courses/PdfViewer";
@@ -55,15 +55,7 @@ export default function LessonPage() {
         )}
 
         {lesson.type === "word" && (
-          <div className="rounded-lg border p-6 text-center space-y-3">
-            <FileIcon className="h-12 w-12 mx-auto text-blue-500" />
-            <p className="font-medium">{lesson.title}</p>
-            <Button asChild>
-              <a href={lesson.content_url} target="_blank" rel="noopener noreferrer" download>
-                Descargar documento Word
-              </a>
-            </Button>
-          </div>
+          <PdfViewer url={lesson.content_url} title={lesson.title} />
         )}
 
         {lesson.type === "link" && (

@@ -8,10 +8,10 @@ import {
   LayoutDashboard,
   BookOpen,
   Users,
-  Mail,
   GraduationCap,
   Menu,
   X,
+  UserCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 const studentNav = [
   { href: "/dashboard/", label: "Inicio", icon: LayoutDashboard },
   { href: "/courses/", label: "Mis Cursos", icon: BookOpen },
+  { href: "/profile/", label: "Mi Perfil", icon: UserCircle },
 ];
 
 const adminNav = [
@@ -26,7 +27,7 @@ const adminNav = [
   { href: "/courses/", label: "Mis Cursos", icon: BookOpen },
   { href: "/admin/users/", label: "Usuarios", icon: Users },
   { href: "/admin/courses/", label: "Gestionar Cursos", icon: GraduationCap },
-  { href: "/admin/invitations/", label: "Invitaciones", icon: Mail },
+  { href: "/profile/", label: "Mi Perfil", icon: UserCircle },
 ];
 
 export default function MobileNav() {

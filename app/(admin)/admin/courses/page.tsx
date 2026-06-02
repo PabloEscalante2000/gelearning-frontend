@@ -2,11 +2,16 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Loader2, Plus, Search, Pencil } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useCourses } from "@/hooks/useCourses";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+} from "@/components/ui/dialog";
+import { useCourses, useCreateCourse } from "@/hooks/useCourses";
 
 const statusVariant = {
   published: "default" as const,
@@ -18,8 +23,25 @@ const statusLabel = { published: "Publicado", draft: "Borrador", archived: "Arch
 
 export default function AdminCoursesPage() {
   const [search, setSearch] = useState("");
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [newTitle, setNewTitle] = useState("");
+  const [newDescription, setNewDescription] = useState("");
   const { data, isLoading } = useCourses();
+  const createCourse = useCreateCourse();
+  const router = useRouter();
   const courses = data ?? [];
+
+  async function handleCreate(e: React.FormEvent) {
+    e.preventDefault();
+    const result = await createCourse.mutateAsync({
+      title: newTitle,
+      description: newDescription,
+    });
+    setDialogOpen(false);
+    setNewTitle("");
+    setNewDescription("");
+    router.push(`/admin/courses/${(result.data as { id: number }).id}/edit`);
+  }
 
   const filtered = courses.filter(
     (c) => c.title.toLowerCase().includes(search.toLowerCase())
@@ -41,11 +63,52 @@ export default function AdminCoursesPage() {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        <Button size="sm" className="sm:ml-auto">
+        <Button size="sm" className="sm:ml-auto" onClick={() => setDialogOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />
           Nuevo curso
         </Button>
       </div>
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Nuevo curso</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleCreate} className="space-y-4 pt-2">
+            <div className="space-y-1.5">
+              <Label>Título</Label>
+              <Input
+                required
+                minLength={5}
+                placeholder="Nombre del curso"
+                value={newTitle}
+                onChange={(e) => setNewTitle(e.target.value)}
+                autoFocus
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Descripción</Label>
+              <textarea
+                required
+                minLength={10}
+                placeholder="Descripción breve del curso"
+                value={newDescription}
+                onChange={(e) => setNewDescription(e.target.value)}
+                className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={createCourse.isPending}>
+                {createCourse.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Crear curso
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {isLoading && (
         <div className="flex justify-center py-16">

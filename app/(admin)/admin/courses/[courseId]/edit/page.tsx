@@ -57,10 +57,10 @@ function parseDuration(v?: string) {
 }
 
 const lessonTypeLabel: Record<string, string> = {
-  video: "Video / Zoom",
-  pdf: "PDF",
-  word: "Word",
-  link: "Enlace externo",
+  video: "Video (Drive / YouTube)",
+  pdf: "Documento PDF (Drive)",
+  word: "Documento Word / Google Docs",
+  link: "Sesión en vivo (Meet)",
 };
 
 // ── Lesson row ────────────────────────────────────────────────────────────────
