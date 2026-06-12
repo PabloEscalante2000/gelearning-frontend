@@ -48,7 +48,7 @@ export default function LoginPage() {
               <GraduationCap className="h-8 w-8 text-primary" />
             </div>
           </div>
-          <CardTitle className="text-2xl">Bienvenido a GELearning</CardTitle>
+          <CardTitle className="text-2xl">Bienvenido a Grupo Eades Learning</CardTitle>
           <CardDescription>Inicia sesión para continuar</CardDescription>
         </CardHeader>
 

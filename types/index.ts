@@ -24,11 +24,33 @@ export interface Course {
   description: string;
   thumbnail_url: string | null;
   status: CourseStatus;
+  price: string | null;
+  is_enrolled?: boolean;
+  lessons_count?: number;
   instructor: User;
   modules?: Module[];
   live_sessions?: LiveSession[];
   created_at: string;
   updated_at: string;
+}
+
+// ── Payments ──────────────────────────────────────────────────────────────────
+
+export type PaymentStatus = "pending" | "approved" | "rejected" | "cancelled" | "in_process";
+
+export interface PaymentPreference {
+  payment_id?: number;
+  init_point?: string;
+  preference_id?: string;
+  free?: boolean;
+  enrolled?: boolean;
+}
+
+export interface PaymentStatusResponse {
+  id: number;
+  status: PaymentStatus;
+  course_id: number;
+  is_enrolled: boolean;
 }
 
 export interface Module {

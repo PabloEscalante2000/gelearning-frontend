@@ -49,7 +49,7 @@ export default function Sidebar() {
         >
           <GraduationCap className="h-5 w-5 text-white" />
         </div>
-        <span className="text-lg font-semibold tracking-tight">GELearning</span>
+        <span className="text-lg font-semibold tracking-tight">Grupo Eades Learning</span>
       </div>
 
       {/* Nav */}

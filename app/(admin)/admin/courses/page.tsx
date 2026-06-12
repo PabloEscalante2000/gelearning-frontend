@@ -21,11 +21,19 @@ const statusVariant = {
 
 const statusLabel = { published: "Publicado", draft: "Borrador", archived: "Archivado" };
 
+function formatPrice(price: string | null | undefined) {
+  if (price === null || price === undefined) return "—";
+  const n = parseFloat(price);
+  if (n === 0) return "Gratis";
+  return `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 0 })}`;
+}
+
 export default function AdminCoursesPage() {
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [newDescription, setNewDescription] = useState("");
+  const [newPrice, setNewPrice] = useState("");
   const { data, isLoading } = useCourses();
   const createCourse = useCreateCourse();
   const router = useRouter();
@@ -33,13 +41,16 @@ export default function AdminCoursesPage() {
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
+    const price = newPrice.trim() === "" ? null : parseFloat(newPrice);
     const result = await createCourse.mutateAsync({
       title: newTitle,
       description: newDescription,
+      price,
     });
     setDialogOpen(false);
     setNewTitle("");
     setNewDescription("");
+    setNewPrice("");
     router.push(`/admin/courses/${(result.data as { id: number }).id}/edit`);
   }
 
@@ -97,6 +108,20 @@ export default function AdminCoursesPage() {
                 className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               />
             </div>
+            <div className="space-y-1.5">
+              <Label>Precio (S/)</Label>
+              <Input
+                type="number"
+                min={0}
+                step="0.01"
+                placeholder="0 = gratis · vacío = solo por invitación"
+                value={newPrice}
+                onChange={(e) => setNewPrice(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Dejá vacío si el acceso solo es por invitación del admin.
+              </p>
+            </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                 Cancelar
@@ -123,6 +148,7 @@ export default function AdminCoursesPage() {
               <tr>
                 <th className="text-left px-4 py-3 font-medium">Curso</th>
                 <th className="text-left px-4 py-3 font-medium hidden md:table-cell">Instructor</th>
+                <th className="text-left px-4 py-3 font-medium hidden sm:table-cell">Precio</th>
                 <th className="text-left px-4 py-3 font-medium">Estado</th>
                 <th className="text-left px-4 py-3 font-medium">Acciones</th>
               </tr>
@@ -133,6 +159,9 @@ export default function AdminCoursesPage() {
                   <td className="px-4 py-3 font-medium">{course.title}</td>
                   <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">
                     {course.instructor.name}
+                  </td>
+                  <td className="px-4 py-3 hidden sm:table-cell text-muted-foreground">
+                    {formatPrice(course.price)}
                   </td>
                   <td className="px-4 py-3">
                     <Badge variant={statusVariant[course.status]}>

@@ -35,7 +35,8 @@ apiClient.interceptors.response.use(
     if (error.response?.status === 401) {
       useAuthStore.getState().clear();
       if (typeof window !== "undefined") {
-        window.location.href = "/login/";
+        const base = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+        window.location.href = `${base}/login/`;
       }
     }
     return Promise.reject(error);

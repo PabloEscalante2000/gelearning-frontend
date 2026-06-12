@@ -79,7 +79,7 @@ export function useCourseStudents(courseId: string) {
 export function useCreateCourse() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (payload: { title: string; description: string; thumbnail_url?: string; status?: string }) =>
+    mutationFn: (payload: { title: string; description: string; thumbnail_url?: string; status?: string; price?: number | null }) =>
       apiClient.post("/api/v1/courses", payload),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["courses"] }),
   });
@@ -88,7 +88,7 @@ export function useCreateCourse() {
 export function useUpdateCourse() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ courseId, ...payload }: { courseId: string; title?: string; description?: string; thumbnail_url?: string; status?: string }) =>
+    mutationFn: ({ courseId, ...payload }: { courseId: string; title?: string; description?: string; thumbnail_url?: string; status?: string; price?: number | null }) =>
       apiClient.put(`/api/v1/courses/${courseId}`, payload),
     onSuccess: (_, { courseId }) => {
       queryClient.invalidateQueries({ queryKey: ["course", courseId] });

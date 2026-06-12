@@ -61,7 +61,7 @@ export default function MobileNav() {
                 >
                   <GraduationCap className="h-4 w-4 text-white" />
                 </div>
-                <span className="font-semibold">GELearning</span>
+                <span className="font-semibold">Grupo Eades Learning</span>
               </div>
               <button
                 className="opacity-60 hover:opacity-100 transition-opacity"

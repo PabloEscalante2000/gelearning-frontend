@@ -5,10 +5,13 @@ import { Search, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import CourseGrid from "@/components/courses/CourseGrid";
 import { useCourses } from "@/hooks/useCourses";
+import { useAuthStore } from "@/store/useAuthStore";
 
 export default function CoursesPage() {
   const [search, setSearch] = useState("");
   const { data, isLoading, isError } = useCourses();
+  const user = useAuthStore((s) => s.user);
+  const isStudent = user?.role === "student";
 
   const courses = data ?? [];
   const filtered = courses.filter(
@@ -17,13 +20,19 @@ export default function CoursesPage() {
       c.description.toLowerCase().includes(search.toLowerCase())
   );
 
+  const enrolledCount = isStudent ? courses.filter((c) => c.is_enrolled).length : courses.length;
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Mis Cursos</h1>
+          <h1 className="text-2xl font-bold">
+            {isStudent ? "Catálogo de cursos" : "Mis Cursos"}
+          </h1>
           <p className="text-muted-foreground text-sm mt-1">
-            {courses.length} cursos disponibles
+            {isStudent
+              ? `${enrolledCount} inscripto${enrolledCount !== 1 ? "s" : ""} · ${courses.length} disponibles`
+              : `${courses.length} cursos disponibles`}
           </p>
         </div>
         <div className="relative sm:ml-auto sm:w-64">
@@ -50,7 +59,12 @@ export default function CoursesPage() {
       )}
 
       {!isLoading && !isError && (
-        <CourseGrid courses={filtered} emptyMessage="No se encontraron cursos." />
+        <CourseGrid
+          courses={filtered}
+          emptyMessage={
+            isStudent ? "No hay cursos disponibles por el momento." : "No se encontraron cursos."
+          }
+        />
       )}
     </div>
   );

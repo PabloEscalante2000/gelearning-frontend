@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import {
   ArrowLeft, Loader2, Save, Plus, Pencil, Trash2,
-  ChevronDown, ChevronUp, GripVertical, Eye, EyeOff,
+  ChevronDown, ChevronUp, GripVertical, Eye, EyeOff, UserPlus, UserMinus,
 } from "lucide-react";
 import Link from "next/link";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -19,9 +19,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useCourse } from "@/hooks/useCourses";
+import { useCourse, useCourseStudents, useEnrollStudent } from "@/hooks/useCourses";
 import { useModules, useCreateModule, useUpdateModule, useDeleteModule } from "@/hooks/useModules";
 import { useCreateLesson, useUpdateLesson, useDeleteLesson } from "@/hooks/useLessons";
+import { useUsers } from "@/hooks/useUsers";
 import type { Module, Lesson } from "@/types";
 
 // ── Schemas ──────────────────────────────────────────────────────────────────
@@ -31,6 +32,8 @@ const courseSchema = z.object({
   description: z.string().min(10, "Mínimo 10 caracteres"),
   status: z.enum(["draft", "published", "archived"]),
   thumbnail_url: z.string().url("URL inválida").optional().or(z.literal("")),
+  price: z.string().optional(),
+  instructor_id: z.string().min(1, "Selecciona un instructor"),
 });
 
 const moduleSchema = z.object({
@@ -42,7 +45,7 @@ const lessonSchema = z.object({
   title: z.string().min(2, "Mínimo 2 caracteres"),
   type: z.enum(["video", "pdf", "word", "link"]),
   content_url: z.string().url("URL inválida"),
-  duration_minutes: z.string().optional(),   // kept as string; converted to number on submit
+  duration_minutes: z.string().optional(),
   is_published: z.boolean(),
 });
 
@@ -53,6 +56,12 @@ type LessonForm = z.infer<typeof lessonSchema>;
 function parseDuration(v?: string) {
   if (!v || v.trim() === "") return null;
   const n = Number(v);
+  return isNaN(n) ? null : n;
+}
+
+function parsePrice(v?: string): number | null {
+  if (!v || v.trim() === "") return null;
+  const n = parseFloat(v);
   return isNaN(n) ? null : n;
 }
 
@@ -131,7 +140,7 @@ function LessonRow({
           </div>
           <div className="col-span-2 space-y-1">
             <Label className="text-xs">URL del contenido</Label>
-            <Input {...register("content_url")} placeholder="https://drive.google.com/file/d/... o meet.google.com/..." />
+            <Input {...register("content_url")} placeholder="https://..." />
             {errors.content_url && <p className="text-xs text-destructive">{errors.content_url.message}</p>}
           </div>
         </div>
@@ -237,7 +246,7 @@ function AddLessonForm({
           <Input type="number" min={0} {...register("duration_minutes")} placeholder="Duración (min)" />
         </div>
         <div className="col-span-2 space-y-1">
-          <Input {...register("content_url")} placeholder="https://drive.google.com/file/d/... o meet.google.com/..." />
+          <Input {...register("content_url")} placeholder="https://..." />
           {errors.content_url && <p className="text-xs text-destructive">{errors.content_url.message}</p>}
         </div>
       </div>
@@ -332,9 +341,7 @@ function ModuleCard({
       {open && (
         <CardContent className="pt-0 space-y-1">
           {lessons.length === 0 && !addingLesson && (
-            <p className="text-xs text-muted-foreground py-2 text-center">
-              Sin lecciones todavía.
-            </p>
+            <p className="text-xs text-muted-foreground py-2 text-center">Sin lecciones todavía.</p>
           )}
 
           {lessons.map((lesson) => (
@@ -373,12 +380,134 @@ function ModuleCard({
   );
 }
 
+// ── Students tab ──────────────────────────────────────────────────────────────
+
+function StudentsTab({ courseId }: { courseId: string }) {
+  const { data: students = [], isLoading, refetch } = useCourseStudents(courseId);
+  const { data: allUsers = [] } = useUsers("student");
+  const enrollStudent = useEnrollStudent();
+  const [selectedUserId, setSelectedUserId] = useState<string>("");
+  const [unenrollPending, setUnenrollPending] = useState<number | null>(null);
+  const queryClient = useQueryClient();
+
+  const enrolledIds = new Set(students.map((s) => s.id));
+  const availableUsers = allUsers.filter((u) => !enrolledIds.has(u.id));
+
+  async function handleEnroll(e: React.FormEvent) {
+    e.preventDefault();
+    if (!selectedUserId) return;
+    await enrollStudent.mutateAsync({
+      user_id: parseInt(selectedUserId),
+      course_id: parseInt(courseId),
+    });
+    setSelectedUserId("");
+    refetch();
+  }
+
+  async function handleUnenroll(enrollmentId: number, userId: number) {
+    if (!confirm("¿Quitar el acceso a este estudiante?")) return;
+    setUnenrollPending(userId);
+    await apiClient.delete(`/api/v1/enrollments/${enrollmentId}`);
+    setUnenrollPending(null);
+    queryClient.invalidateQueries({ queryKey: ["course-students", courseId] });
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center py-8">
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Dar acceso a un estudiante</CardTitle>
+          <CardDescription>
+            Inscribe manualmente a un estudiante sin requerir pago.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleEnroll} className="flex gap-2">
+            <select
+              className="flex h-9 flex-1 rounded-md border border-input bg-background px-3 py-1 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              value={selectedUserId}
+              onChange={(e) => setSelectedUserId(e.target.value)}
+              required
+            >
+              <option value="">Seleccionar estudiante...</option>
+              {availableUsers.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.name} ({u.email})
+                </option>
+              ))}
+            </select>
+            <Button type="submit" size="sm" disabled={enrollStudent.isPending || !selectedUserId}>
+              {enrollStudent.isPending
+                ? <Loader2 className="h-4 w-4 animate-spin" />
+                : <UserPlus className="h-4 w-4" />}
+              <span className="ml-2 hidden sm:inline">Dar acceso</span>
+            </Button>
+          </form>
+          {availableUsers.length === 0 && (
+            <p className="text-xs text-muted-foreground mt-2">Todos los estudiantes ya tienen acceso.</p>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>
+            Estudiantes inscritos
+            {students.length > 0 && (
+              <Badge variant="secondary" className="ml-2">{students.length}</Badge>
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {students.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-4">Sin estudiantes inscritos.</p>
+          ) : (
+            <div className="divide-y rounded-md border">
+              {students.map((student) => (
+                <div key={student.id} className="flex items-center justify-between px-4 py-3">
+                  <div>
+                    <p className="text-sm font-medium">{student.name}</p>
+                    <p className="text-xs text-muted-foreground">{student.email}</p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-destructive hover:text-destructive"
+                    disabled={unenrollPending === student.id}
+                    onClick={() => {
+                      const pivot = (student as unknown as { pivot?: { id?: number } }).pivot;
+                      handleUnenroll(pivot?.id ?? student.id, student.id);
+                    }}
+                  >
+                    {unenrollPending === student.id
+                      ? <Loader2 className="h-4 w-4 animate-spin" />
+                      : <UserMinus className="h-4 w-4" />}
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function EditCoursePage() {
   const { courseId } = useParams<{ courseId: string }>();
   const { data: course, isLoading: loadingCourse } = useCourse(courseId);
   const { data: modules = [], isLoading: loadingModules } = useModules(courseId);
+  const { data: instructors = [] } = useUsers("instructor");
   const createModule = useCreateModule();
   const queryClient = useQueryClient();
 
@@ -405,13 +534,20 @@ export default function EditCoursePage() {
         description: course.description,
         status: course.status,
         thumbnail_url: course.thumbnail_url ?? "",
+        price: course.price !== null && course.price !== undefined ? String(parseFloat(course.price)) : "",
+        instructor_id: String(course.instructor_id),
       });
     }
   }, [course, resetCourse]);
 
   const updateCourse = useMutation({
     mutationFn: (data: CourseForm) =>
-      apiClient.put(`/api/v1/courses/${courseId}`, data),
+      apiClient.put(`/api/v1/courses/${courseId}`, {
+        ...data,
+        price: parsePrice(data.price),
+        thumbnail_url: data.thumbnail_url || null,
+        instructor_id: parseInt(data.instructor_id),
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["course", courseId] });
       queryClient.invalidateQueries({ queryKey: ["courses"] });
@@ -463,6 +599,7 @@ export default function EditCoursePage() {
               </Badge>
             )}
           </TabsTrigger>
+          <TabsTrigger value="students">Estudiantes</TabsTrigger>
         </TabsList>
 
         {/* ── Tab: Course info ── */}
@@ -495,16 +632,50 @@ export default function EditCoursePage() {
                   {courseErrors.thumbnail_url && <p className="text-xs text-destructive">{courseErrors.thumbnail_url.message}</p>}
                 </div>
 
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Estado</Label>
+                    <select
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      {...regCourse("status")}
+                    >
+                      <option value="draft">Borrador</option>
+                      <option value="published">Publicado</option>
+                      <option value="archived">Archivado</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Precio (S/)</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      placeholder="0 = gratis · vacío = solo por invitación"
+                      {...regCourse("price")}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Vacío = solo acceso por invitación
+                    </p>
+                  </div>
+                </div>
+
                 <div className="space-y-2">
-                  <Label>Estado</Label>
+                  <Label>Instructor</Label>
                   <select
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    {...regCourse("status")}
+                    {...regCourse("instructor_id")}
                   >
-                    <option value="draft">Borrador</option>
-                    <option value="published">Publicado</option>
-                    <option value="archived">Archivado</option>
+                    <option value="">Seleccionar instructor...</option>
+                    {instructors.map((u) => (
+                      <option key={u.id} value={u.id}>
+                        {u.name} ({u.email})
+                      </option>
+                    ))}
                   </select>
+                  {courseErrors.instructor_id && (
+                    <p className="text-xs text-destructive">{courseErrors.instructor_id.message}</p>
+                  )}
                 </div>
 
                 {updateCourse.isSuccess && (
@@ -546,7 +717,6 @@ export default function EditCoursePage() {
               <ModuleCard key={mod.id} module={mod} courseId={courseId} index={i} />
             ))}
 
-            {/* Add module form */}
             {addingModule ? (
               <Card className="border-dashed">
                 <CardContent className="pt-4">
@@ -594,6 +764,11 @@ export default function EditCoursePage() {
               </Button>
             )}
           </div>
+        </TabsContent>
+
+        {/* ── Tab: Students ── */}
+        <TabsContent value="students">
+          <StudentsTab courseId={courseId} />
         </TabsContent>
       </Tabs>
     </div>

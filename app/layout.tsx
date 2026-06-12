@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "GELearning - Plataforma de Cursos",
+  title: "Grupo Eades Learning - Plataforma de Cursos",
   description: "Plataforma de aprendizaje en línea",
 };
 
