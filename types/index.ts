@@ -149,6 +149,25 @@ export interface UploadedFile {
   mime_type: string;
 }
 
+// ── Stats ─────────────────────────────────────────────────────────────────────
+
+export interface AdminStats {
+  total_students: number;
+  total_courses: number;
+  total_enrollments: number;
+  total_lessons_completed: number;
+  avg_progress: number;
+}
+
+export interface InstructorCourseStats {
+  course_id: number;
+  course_title: string;
+  enrolled_students: number;
+  total_lessons: number;
+  total_completions: number;
+  completion_rate: number;
+}
+
 // ── API response wrapper ──────────────────────────────────────────────────────
 
 export interface ApiResponse<T> {

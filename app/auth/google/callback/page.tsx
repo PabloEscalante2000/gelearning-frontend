@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2, GraduationCap, AlertCircle } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 import apiClient from "@/lib/axios";
 
-export default function GoogleCallbackPage() {
+function GoogleCallback() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const setAuth = useAuthStore((s) => s.setAuth);
@@ -57,5 +57,13 @@ export default function GoogleCallbackPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function GoogleCallbackPage() {
+  return (
+    <Suspense>
+      <GoogleCallback />
+    </Suspense>
   );
 }
