@@ -3,12 +3,17 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ArrowLeft, CheckCircle, Loader2, ExternalLink } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import VideoPlayer from "@/components/courses/VideoPlayer";
 import PdfViewer from "@/components/courses/PdfViewer";
 import ModuleAccordion from "@/components/courses/ModuleAccordion";
 import { useLesson, useCompleteLesson } from "@/hooks/useLessons";
 import { useCourse } from "@/hooks/useCourses";
+
+function toAbsoluteUrl(url: string | null | undefined): string {
+  const raw = (url ?? "").trim();
+  return /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+}
 
 export default function LessonPage() {
   const { courseId, moduleId, lessonId } = useParams<{
@@ -62,11 +67,14 @@ export default function LessonPage() {
           <div className="rounded-lg border p-6 text-center space-y-3">
             <ExternalLink className="h-12 w-12 mx-auto text-primary" />
             <p className="font-medium">{lesson.title}</p>
-            <Button asChild>
-              <a href={lesson.content_url} target="_blank" rel="noopener noreferrer">
-                Abrir enlace externo
-              </a>
-            </Button>
+            <a
+              href={toAbsoluteUrl(lesson.content_url)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={buttonVariants()}
+            >
+              Abrir enlace externo
+            </a>
           </div>
         )}
 

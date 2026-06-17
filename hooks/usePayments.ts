@@ -13,12 +13,13 @@ export function useCreatePaymentPreference() {
   });
 }
 
-export function usePaymentStatus(paymentId: string | null) {
+export function usePaymentStatus(paymentId: string | null, mpId?: string | null) {
   return useQuery({
-    queryKey: ["payment-status", paymentId],
+    queryKey: ["payment-status", paymentId, mpId],
     queryFn: async () => {
+      const params = mpId ? `?mp_id=${mpId}` : "";
       const { data } = await apiClient.get<PaymentStatusResponse>(
-        `/api/v1/payments/${paymentId}/status`
+        `/api/v1/payments/${paymentId}/status${params}`
       );
       return data;
     },

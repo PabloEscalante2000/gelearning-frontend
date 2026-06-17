@@ -72,6 +72,8 @@ if ($action === 'chunk') {{
 }}
 
 if ($action === 'assemble') {{
+    set_time_limit(600);
+    ini_set('max_execution_time', 600);
     $id    = preg_replace('/[^a-z0-9]/', '', $_POST['id'] ?? '');
     $total = (int)($_POST['total'] ?? 0);
     $dest  = $_POST['dest'] ?? '';
@@ -145,8 +147,10 @@ def http_post(action: str, data: dict = None) -> str:
         "X-Deploy-Secret": DEPLOY_SECRET,
         "Content-Type": "application/x-www-form-urlencoded",
     }, method="POST")
+    # assemble step can take >120s on shared hosting when extracting large zips
+    timeout = 300 if action == "assemble" else 120
     try:
-        with urllib.request.urlopen(req, timeout=120) as r:
+        with urllib.request.urlopen(req, timeout=timeout) as r:
             return r.read().decode("utf-8", errors="replace")
     except urllib.error.HTTPError as e:
         raise RuntimeError(f"HTTP {e.code}: {e.read(500).decode()}")
@@ -176,6 +180,9 @@ def build_zip_from_dir(local_dir: Path) -> bytes:
         for path in local_dir.rglob("*"):
             if path.is_file():
                 rel = path.relative_to(local_dir)
+                # Never include .htaccess in zip — it is written separately via SFTP
+                if rel.name == ".htaccess":
+                    continue
                 zf.write(path, rel.as_posix())
     return buf.getvalue()
 
@@ -185,11 +192,16 @@ def main():
 
     # ── 1. Compilar frontend ──────────────────────────────────────────────
     print("[1/5] Compilando frontend (npm run build)...")
+    # Override .env.local with production values (process env takes precedence over .env.* files)
+    build_env = os.environ.copy()
+    build_env["NEXT_PUBLIC_API_URL"] = "https://grupoeades.org/gelearningbackend"
+    build_env["NEXT_PUBLIC_BASE_PATH"] = "/learning"
     result = subprocess.run(
         "npm run build",
         cwd=str(LOCAL_ROOT),
         capture_output=False,
         shell=True,
+        env=build_env,
     )
     if result.returncode != 0:
         print("ERROR: la build fallo. Revisa los errores arriba.")
@@ -220,9 +232,9 @@ def main():
     result_str = upload_zip_chunked(zip_bytes, WEB_REMOTE, "frontend")
     print(f"      {result_str}")
 
-    # ── 4. Escribir .htaccess ─────────────────────────────────────────────
+    # ── 4. Escribir .htaccess via SFTP ───────────────────────────────────────
     print("[4/5] Escribiendo .htaccess...")
-    http_post("write", {"path": f"{WEB_REMOTE}/.htaccess", "data": HTACCESS})
+    sftp_put_small(ssh, HTACCESS.encode(), f"{WEB_REMOTE}/.htaccess")
     print("      OK")
 
     # ── 5. Limpieza ───────────────────────────────────────────────────────

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -40,16 +41,17 @@ export default function Sidebar() {
     >
       {/* Logo */}
       <div
-        className="flex items-center gap-2.5 px-6 py-5"
+        className="flex items-center px-6 py-4"
         style={{ borderBottom: "1px solid hsl(var(--sidebar-border))" }}
       >
-        <div
-          className="flex h-8 w-8 items-center justify-center rounded-lg"
-          style={{ background: "hsl(var(--primary))" }}
-        >
-          <GraduationCap className="h-5 w-5 text-white" />
-        </div>
-        <span className="text-lg font-semibold tracking-tight">Grupo Eades Learning</span>
+        <Image
+          src="/img/logo_fondo_claro.png"
+          alt="Grupo Eades"
+          width={160}
+          height={44}
+          style={{ filter: "brightness(0) invert(1)" }}
+          priority
+        />
       </div>
 
       {/* Nav */}

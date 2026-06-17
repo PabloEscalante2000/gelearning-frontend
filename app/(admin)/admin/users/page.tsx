@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, Search, Plus, Pencil, Trash2, BookOpen, X } from "lucide-react";
+import { Loader2, Search, Plus, Pencil, Trash2, BookOpen, X, Eye, EyeOff } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -39,11 +39,12 @@ function CreateUserDialog({ open, onClose }: { open: boolean; onClose: () => voi
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [role, setRole] = useState<string>("student");
   const [error, setError] = useState<string | null>(null);
   const createUser = useCreateUser();
 
-  const reset = () => { setName(""); setEmail(""); setPassword(""); setRole("student"); setError(null); };
+  const reset = () => { setName(""); setEmail(""); setPassword(""); setShowPassword(false); setRole("student"); setError(null); };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,7 +76,24 @@ function CreateUserDialog({ open, onClose }: { open: boolean; onClose: () => voi
           </div>
           <div className="space-y-2">
             <Label htmlFor="c-password">Contraseña</Label>
-            <Input id="c-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+            <div className="relative">
+              <Input
+                id="c-password"
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="pr-10"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                tabIndex={-1}
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="c-role">Rol</Label>
@@ -109,6 +127,7 @@ function EditUserDialog({ user, onClose }: { user: User | null; onClose: () => v
   const [name, setName] = useState(user?.name ?? "");
   const [email, setEmail] = useState(user?.email ?? "");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [role, setRole] = useState<string>(user?.role ?? "student");
   const [error, setError] = useState<string | null>(null);
   const updateUser = useUpdateUser();
@@ -146,13 +165,24 @@ function EditUserDialog({ user, onClose }: { user: User | null; onClose: () => v
               Nueva contraseña{" "}
               <span className="text-muted-foreground text-xs">(dejar vacío para no cambiar)</span>
             </Label>
-            <Input
-              id="e-password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-            />
+            <div className="relative">
+              <Input
+                id="e-password"
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className="pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                tabIndex={-1}
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="e-role">Rol</Label>

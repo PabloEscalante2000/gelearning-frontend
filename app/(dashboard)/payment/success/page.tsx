@@ -10,7 +10,9 @@ import { Suspense } from "react";
 function SuccessContent() {
   const searchParams = useSearchParams();
   const pid = searchParams.get("pid");
-  const { data, isLoading } = usePaymentStatus(pid);
+  // MP appends collection_id (= MP payment ID) to the success URL
+  const mpId = searchParams.get("collection_id") ?? searchParams.get("payment_id");
+  const { data, isLoading } = usePaymentStatus(pid, mpId);
 
   if (isLoading) {
     return (

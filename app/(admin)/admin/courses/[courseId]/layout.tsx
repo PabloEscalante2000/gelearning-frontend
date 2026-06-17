@@ -1,5 +1,5 @@
 export function generateStaticParams() {
-  return [{ courseId: "0" }];
+  return Array.from({ length: 20 }, (_, i) => ({ courseId: String(i + 1) }));
 }
 
 export default function AdminCourseLayout({ children }: { children: React.ReactNode }) {

@@ -6,7 +6,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useRouter, useSearchParams } from "next/navigation";
-import { GraduationCap, Loader2, Eye, EyeOff } from "lucide-react";
+import Image from "next/image";
+import { Loader2, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -56,10 +57,14 @@ function RegisterPageInner() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-800 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-3 text-center">
-          <div className="flex justify-center">
-            <div className="rounded-full bg-primary/10 p-3">
-              <GraduationCap className="h-8 w-8 text-primary" />
-            </div>
+          <div className="flex justify-center pb-1">
+            <Image
+              src="/img/logo_fondo_claro.png"
+              alt="Grupo Eades"
+              width={200}
+              height={55}
+              priority
+            />
           </div>
           <CardTitle className="text-2xl">Crear cuenta</CardTitle>
           <CardDescription>Regístrate para acceder a los cursos</CardDescription>
