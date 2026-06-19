@@ -11,6 +11,7 @@ import {
   GraduationCap,
   ChevronRight,
   UserCircle,
+  Award,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -25,6 +26,7 @@ const adminNav = [
   { href: "/courses/", label: "Mis Cursos", icon: BookOpen },
   { href: "/admin/users/", label: "Usuarios", icon: Users },
   { href: "/admin/courses/", label: "Gestionar Cursos", icon: GraduationCap },
+  { href: "/admin/certificados/", label: "Certificados", icon: Award },
   { href: "/profile/", label: "Mi Perfil", icon: UserCircle },
 ];
 

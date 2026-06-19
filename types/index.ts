@@ -168,6 +168,20 @@ export interface InstructorCourseStats {
   completion_rate: number;
 }
 
+// ── Diploma Verifications ─────────────────────────────────────────────────────
+
+export interface DiplomaVerification {
+  id: number;
+  code: string;
+  student_name: string;
+  student_document: string | null;
+  course_id: number;
+  issued_at: string;
+  course?: { id: number; title: string };
+  created_at: string;
+  updated_at: string;
+}
+
 // ── API response wrapper ──────────────────────────────────────────────────────
 
 export interface ApiResponse<T> {
