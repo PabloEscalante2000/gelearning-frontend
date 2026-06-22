@@ -1,9 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { CheckCircle2, PlayCircle, FileText, Link2, FileIcon } from "lucide-react";
+import { CheckCircle2, PlayCircle, FileText, Link2, FileIcon, CalendarClock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Lesson } from "@/types";
+
+function formatScheduled(dt: string): string {
+  const [datePart, timePart] = dt.split(" ");
+  const [y, m, d] = datePart.split("-").map(Number);
+  const [h, min] = (timePart ?? "00:00").split(":").map(Number);
+  const date = new Date(y, m - 1, d, h, min);
+  return date.toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" })
+    + " · " + date.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
+}
 
 interface LessonItemProps {
   lesson: Lesson;
@@ -37,7 +46,15 @@ export default function LessonItem({ lesson, courseId, moduleId, active }: Lesso
       ) : (
         <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
       )}
-      <span className="flex-1 line-clamp-1">{lesson.title}</span>
+      <div className="flex-1 min-w-0">
+        <span className="line-clamp-1 block">{lesson.title}</span>
+        {lesson.scheduled_at && (
+          <span className="flex items-center gap-1 text-xs text-blue-600 mt-0.5">
+            <CalendarClock className="h-3 w-3 shrink-0" />
+            {formatScheduled(lesson.scheduled_at)}
+          </span>
+        )}
+      </div>
       {lesson.duration_minutes && (
         <span className="text-xs text-muted-foreground shrink-0">
           {lesson.duration_minutes}m

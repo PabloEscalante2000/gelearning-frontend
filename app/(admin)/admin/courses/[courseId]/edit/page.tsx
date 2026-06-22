@@ -47,11 +47,26 @@ const lessonSchema = z.object({
   content_url: z.string().url("URL inválida"),
   duration_minutes: z.string().optional(),
   is_published: z.boolean(),
+  scheduled_at: z.string().optional(),
 });
 
 type CourseForm = z.infer<typeof courseSchema>;
 type ModuleForm = z.infer<typeof moduleSchema>;
 type LessonForm = z.infer<typeof lessonSchema>;
+
+function toDatetimeLocal(dt: string | null | undefined): string {
+  if (!dt) return "";
+  return dt.replace(" ", "T").slice(0, 16);
+}
+
+function formatScheduledShort(dt: string): string {
+  const [datePart, timePart] = dt.split(" ");
+  const [y, m, d] = datePart.split("-").map(Number);
+  const [h, min] = (timePart ?? "00:00").split(":").map(Number);
+  const date = new Date(y, m - 1, d, h, min);
+  return date.toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" })
+    + " " + date.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
+}
 
 function parseDuration(v?: string) {
   if (!v || v.trim() === "") return null;
@@ -94,6 +109,7 @@ function LessonRow({
       content_url: lesson.content_url,
       duration_minutes: lesson.duration_minutes != null ? String(lesson.duration_minutes) : "",
       is_published: lesson.is_published,
+      scheduled_at: toDatetimeLocal(lesson.scheduled_at),
     },
   });
 
@@ -104,6 +120,7 @@ function LessonRow({
       courseId,
       ...data,
       duration_minutes: parseDuration(data.duration_minutes),
+      scheduled_at: data.scheduled_at || null,
     });
     setEditing(false);
   };
@@ -143,6 +160,10 @@ function LessonRow({
             <Input {...register("content_url")} placeholder="https://..." />
             {errors.content_url && <p className="text-xs text-destructive">{errors.content_url.message}</p>}
           </div>
+          <div className="col-span-2 space-y-1">
+            <Label className="text-xs">Fecha y hora programada <span className="text-muted-foreground font-normal">(opcional)</span></Label>
+            <Input type="datetime-local" {...register("scheduled_at")} />
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <input type="checkbox" id={`pub-${lesson.id}`} {...register("is_published")} className="h-4 w-4" />
@@ -170,6 +191,9 @@ function LessonRow({
           {lessonTypeLabel[lesson.type]}
           {lesson.duration_minutes ? ` · ${lesson.duration_minutes} min` : ""}
         </p>
+        {lesson.scheduled_at && (
+          <p className="text-xs text-blue-600 font-medium">{formatScheduledShort(lesson.scheduled_at)}</p>
+        )}
       </div>
       <div className="flex items-center gap-1 shrink-0">
         {lesson.is_published
@@ -209,7 +233,7 @@ function AddLessonForm({
   const createLesson = useCreateLesson();
   const { register, handleSubmit, reset, formState: { errors } } = useForm<LessonForm>({
     resolver: zodResolver(lessonSchema),
-    defaultValues: { type: "video", is_published: false, duration_minutes: "" },
+    defaultValues: { type: "video", is_published: false, duration_minutes: "", scheduled_at: "" },
   });
 
   const onSubmit = async (data: LessonForm) => {
@@ -219,8 +243,9 @@ function AddLessonForm({
       order,
       ...data,
       duration_minutes: parseDuration(data.duration_minutes),
+      scheduled_at: data.scheduled_at || null,
     });
-    reset({ type: "video", is_published: false });
+    reset({ type: "video", is_published: false, scheduled_at: "" });
     onDone();
   };
 
@@ -248,6 +273,10 @@ function AddLessonForm({
         <div className="col-span-2 space-y-1">
           <Input {...register("content_url")} placeholder="https://..." />
           {errors.content_url && <p className="text-xs text-destructive">{errors.content_url.message}</p>}
+        </div>
+        <div className="col-span-2 space-y-1">
+          <Label className="text-xs">Fecha y hora programada <span className="text-muted-foreground font-normal">(opcional)</span></Label>
+          <Input type="datetime-local" {...register("scheduled_at")} />
         </div>
       </div>
       <div className="flex items-center justify-between">

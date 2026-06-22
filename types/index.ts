@@ -73,6 +73,7 @@ export interface Lesson {
   duration_minutes: number | null;
   order: number;
   is_published: boolean;
+  scheduled_at: string | null;
   completed?: boolean;
 }
 

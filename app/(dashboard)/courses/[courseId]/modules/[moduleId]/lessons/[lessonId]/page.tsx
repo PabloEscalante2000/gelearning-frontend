@@ -2,13 +2,23 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, CheckCircle, Loader2, ExternalLink } from "lucide-react";
+import { ArrowLeft, CheckCircle, Loader2, ExternalLink, CalendarClock } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import VideoPlayer from "@/components/courses/VideoPlayer";
 import PdfViewer from "@/components/courses/PdfViewer";
 import ModuleAccordion from "@/components/courses/ModuleAccordion";
 import { useLesson, useCompleteLesson } from "@/hooks/useLessons";
 import { useCourse } from "@/hooks/useCourses";
+
+function formatScheduled(dt: string): string {
+  const [datePart, timePart] = dt.split(" ");
+  const [y, m, d] = datePart.split("-").map(Number);
+  const [h, min] = (timePart ?? "00:00").split(":").map(Number);
+  const date = new Date(y, m - 1, d, h, min);
+  const dayStr = date.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  const timeStr = date.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
+  return `${dayStr} a las ${timeStr}`;
+}
 
 function toAbsoluteUrl(url: string | null | undefined): string {
   const raw = (url ?? "").trim();
@@ -50,6 +60,16 @@ export default function LessonPage() {
         </Link>
 
         <h1 className="text-2xl font-bold">{lesson.title}</h1>
+
+        {lesson.scheduled_at && (
+          <div className="flex items-center gap-3 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3">
+            <CalendarClock className="h-5 w-5 text-blue-600 shrink-0" />
+            <div className="text-sm">
+              <span className="font-semibold text-blue-800">Fecha programada: </span>
+              <span className="text-blue-700 capitalize">{formatScheduled(lesson.scheduled_at)}</span>
+            </div>
+          </div>
+        )}
 
         {lesson.type === "video" && (
           <VideoPlayer url={lesson.content_url} title={lesson.title} />
