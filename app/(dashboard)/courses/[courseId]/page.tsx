@@ -116,7 +116,15 @@ function CoursePreview({
 
       {/* ── Sidebar ── */}
       <div className="space-y-4">
-        <div className="rounded-lg border p-6 space-y-5 sticky top-24">
+        <div className="rounded-lg border overflow-hidden sticky top-24">
+          {course.thumbnail_url && (
+            <img
+              src={course.thumbnail_url}
+              alt={course.title}
+              className="w-full aspect-video object-cover"
+            />
+          )}
+          <div className="p-6 space-y-5">
           {isPurchasable ? (
             <>
               <div className="text-center space-y-1">
@@ -165,6 +173,7 @@ function CoursePreview({
               <span className="text-muted-foreground">Instructor</span>
               <span className="font-medium">{course.instructor.name}</span>
             </div>
+          </div>
           </div>
         </div>
       </div>
@@ -259,7 +268,15 @@ function CourseFullView({
       </div>
 
       <div className="space-y-4">
-        <div className="rounded-lg border p-6 space-y-4 sticky top-24">
+        <div className="rounded-lg border overflow-hidden sticky top-24">
+          {course.thumbnail_url && (
+            <img
+              src={course.thumbnail_url}
+              alt={course.title}
+              className="w-full aspect-video object-cover"
+            />
+          )}
+          <div className="p-6 space-y-4">
           {modules[0]?.lessons?.[0] && (
             <Link
               href={`/courses/${courseId}/modules/${modules[0].id}/lessons/${modules[0].lessons![0].id}/`}
@@ -285,6 +302,7 @@ function CourseFullView({
               <span className="text-muted-foreground">Instructor</span>
               <span>{course.instructor.name}</span>
             </div>
+          </div>
           </div>
         </div>
       </div>

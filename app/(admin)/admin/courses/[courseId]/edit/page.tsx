@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import {
   ArrowLeft, Loader2, Save, Plus, Pencil, Trash2,
-  ChevronDown, ChevronUp, GripVertical, Eye, EyeOff, UserPlus, UserMinus,
+  ChevronDown, ChevronUp, GripVertical, Eye, EyeOff, UserPlus, UserMinus, Upload, BookOpen,
 } from "lucide-react";
 import Link from "next/link";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -23,6 +23,7 @@ import { useCourse, useCourseStudents, useEnrollStudent } from "@/hooks/useCours
 import { useModules, useCreateModule, useUpdateModule, useDeleteModule } from "@/hooks/useModules";
 import { useCreateLesson, useUpdateLesson, useDeleteLesson } from "@/hooks/useLessons";
 import { useUsers } from "@/hooks/useUsers";
+import { useModuleAccess, useUpdateModuleAccess } from "@/hooks/useModuleAccess";
 import type { Module, Lesson } from "@/types";
 
 // ── Schemas ──────────────────────────────────────────────────────────────────
@@ -409,11 +410,132 @@ function ModuleCard({
   );
 }
 
+// ── Module access dialog ───────────────────────────────────────────────────────
+
+function ModuleAccessDialog({
+  courseId,
+  student,
+  modules,
+}: {
+  courseId: string;
+  student: { id: number; name: string };
+  modules: Module[];
+}) {
+  const [open, setOpen] = useState(false);
+  const { data: access, isLoading } = useModuleAccess(courseId, String(student.id));
+  const updateAccess = useUpdateModuleAccess();
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+
+  useEffect(() => {
+    if (!open || !access) return;
+    setSelectedIds(
+      access.module_ids.length === 0
+        ? new Set(modules.map((m) => m.id))
+        : new Set(access.module_ids)
+    );
+  }, [open, access, modules]);
+
+  function toggleModule(id: number) {
+    const next = new Set(selectedIds);
+    next.has(id) ? next.delete(id) : next.add(id);
+    setSelectedIds(next);
+  }
+
+  async function handleSave() {
+    const allChecked = selectedIds.size === modules.length;
+    await updateAccess.mutateAsync({
+      courseId,
+      userId: String(student.id),
+      moduleIds: allChecked ? [] : Array.from(selectedIds),
+    });
+    setOpen(false);
+  }
+
+  const label = access
+    ? access.module_ids.length === 0
+      ? "Todos"
+      : `${access.module_ids.length}/${modules.length}`
+    : "Módulos";
+
+  return (
+    <>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        className="h-7 gap-1 text-xs"
+        onClick={() => setOpen(true)}
+      >
+        <BookOpen className="h-3 w-3" />
+        {label}
+      </Button>
+
+      {open && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          onClick={(e) => e.target === e.currentTarget && setOpen(false)}
+        >
+          <div className="bg-background rounded-lg border p-6 shadow-xl w-80 space-y-4">
+            <div>
+              <p className="font-semibold">Acceso a módulos</p>
+              <p className="text-sm text-muted-foreground truncate">{student.name}</p>
+            </div>
+
+            {isLoading ? (
+              <div className="flex justify-center py-6">
+                <Loader2 className="h-5 w-5 animate-spin" />
+              </div>
+            ) : (
+              <div className="space-y-1 max-h-60 overflow-y-auto">
+                {modules.map((m) => (
+                  <label
+                    key={m.id}
+                    className="flex items-center gap-3 rounded-md px-2 py-2 cursor-pointer hover:bg-muted"
+                  >
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4"
+                      checked={selectedIds.has(m.id)}
+                      onChange={() => toggleModule(m.id)}
+                    />
+                    <span className="text-sm line-clamp-1">{m.title}</span>
+                  </label>
+                ))}
+              </div>
+            )}
+
+            <p className="text-xs text-muted-foreground">
+              Todos marcados = acceso completo al curso.
+            </p>
+
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" size="sm" onClick={() => setOpen(false)}>
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                disabled={updateAccess.isPending || selectedIds.size === 0}
+                onClick={handleSave}
+              >
+                {updateAccess.isPending
+                  ? <Loader2 className="h-4 w-4 animate-spin" />
+                  : "Guardar"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
 // ── Students tab ──────────────────────────────────────────────────────────────
 
 function StudentsTab({ courseId }: { courseId: string }) {
   const { data: students = [], isLoading, refetch } = useCourseStudents(courseId);
   const { data: allUsers = [] } = useUsers("student");
+  const { data: courseModules = [] } = useModules(courseId);
   const enrollStudent = useEnrollStudent();
   const [selectedUserId, setSelectedUserId] = useState<string>("");
   const [unenrollPending, setUnenrollPending] = useState<number | null>(null);
@@ -506,20 +628,27 @@ function StudentsTab({ courseId }: { courseId: string }) {
                     <p className="text-sm font-medium">{student.name}</p>
                     <p className="text-xs text-muted-foreground">{student.email}</p>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-destructive hover:text-destructive"
-                    disabled={unenrollPending === student.id}
-                    onClick={() => {
-                      const pivot = (student as unknown as { pivot?: { id?: number } }).pivot;
-                      handleUnenroll(pivot?.id ?? student.id, student.id);
-                    }}
-                  >
-                    {unenrollPending === student.id
-                      ? <Loader2 className="h-4 w-4 animate-spin" />
-                      : <UserMinus className="h-4 w-4" />}
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <ModuleAccessDialog
+                      courseId={courseId}
+                      student={student}
+                      modules={courseModules}
+                    />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-destructive hover:text-destructive"
+                      disabled={unenrollPending === student.id}
+                      onClick={() => {
+                        const pivot = (student as unknown as { pivot?: { id?: number } }).pivot;
+                        handleUnenroll(pivot?.id ?? student.id, student.id);
+                      }}
+                    >
+                      {unenrollPending === student.id
+                        ? <Loader2 className="h-4 w-4 animate-spin" />
+                        : <UserMinus className="h-4 w-4" />}
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -546,8 +675,34 @@ export default function EditCoursePage() {
     register: regCourse,
     handleSubmit: handleCourse,
     reset: resetCourse,
+    setValue: setCourseValue,
     formState: { errors: courseErrors, isSubmitting },
   } = useForm<CourseForm>({ resolver: zodResolver(courseSchema) });
+
+  const [thumbPreview, setThumbPreview] = useState<string | null>(null);
+  const [thumbUploading, setThumbUploading] = useState(false);
+  const thumbInputRef = useRef<HTMLInputElement>(null);
+
+  async function handleThumbnailUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setThumbPreview(URL.createObjectURL(file));
+    setThumbUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("thumbnail", file);
+      const res = await apiClient.post<{ thumbnail_url: string }>(
+        `/api/v1/courses/${courseId}/thumbnail`,
+        formData,
+        { headers: { "Content-Type": undefined } }
+      );
+      setCourseValue("thumbnail_url", res.data.thumbnail_url, { shouldValidate: true });
+    } catch {
+      setThumbPreview(null);
+    } finally {
+      setThumbUploading(false);
+    }
+  }
 
   const {
     register: regModule,
@@ -656,9 +811,39 @@ export default function EditCoursePage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>URL de miniatura</Label>
-                  <Input placeholder="https://..." {...regCourse("thumbnail_url")} />
-                  {courseErrors.thumbnail_url && <p className="text-xs text-destructive">{courseErrors.thumbnail_url.message}</p>}
+                  <Label>Imagen del curso</Label>
+                  <div className="flex items-start gap-4">
+                    {(thumbPreview || course?.thumbnail_url) && (
+                      <img
+                        src={thumbPreview ?? course?.thumbnail_url ?? ""}
+                        alt="Miniatura"
+                        className="h-24 w-40 object-cover rounded-md border shrink-0"
+                      />
+                    )}
+                    <div className="space-y-1.5">
+                      <input
+                        ref={thumbInputRef}
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp,image/gif"
+                        className="hidden"
+                        onChange={handleThumbnailUpload}
+                      />
+                      <input type="hidden" {...regCourse("thumbnail_url")} />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => thumbInputRef.current?.click()}
+                        disabled={thumbUploading}
+                      >
+                        {thumbUploading
+                          ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          : <Upload className="mr-2 h-4 w-4" />}
+                        {thumbUploading ? "Subiendo..." : "Subir imagen"}
+                      </Button>
+                      <p className="text-xs text-muted-foreground">JPG, PNG, WebP · Max 5 MB</p>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">

@@ -31,9 +31,10 @@ export function useLesson(moduleId: string, lessonId: string) {
 export function useCompleteLesson() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ lessonId }: { lessonId: string; courseId: string }) =>
+    mutationFn: ({ lessonId }: { lessonId: string; moduleId: string; courseId: string }) =>
       apiClient.post(`/api/v1/lessons/${lessonId}/complete`),
-    onSuccess: (_, { courseId }) => {
+    onSuccess: (_, { courseId, moduleId, lessonId }) => {
+      queryClient.invalidateQueries({ queryKey: ["lesson", moduleId, lessonId] });
       queryClient.invalidateQueries({ queryKey: ["course-progress", courseId] });
       queryClient.invalidateQueries({ queryKey: ["course", courseId] });
     },

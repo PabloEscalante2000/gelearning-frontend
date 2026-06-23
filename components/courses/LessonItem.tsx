@@ -30,6 +30,7 @@ const typeIcon = {
 
 export default function LessonItem({ lesson, courseId, moduleId, active }: LessonItemProps) {
   const Icon = typeIcon[lesson.type] ?? FileText;
+  const done = !!lesson.completed;
 
   return (
     <Link
@@ -38,24 +39,31 @@ export default function LessonItem({ lesson, courseId, moduleId, active }: Lesso
         "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
         active
           ? "bg-primary/10 text-primary font-medium"
-          : "hover:bg-muted text-foreground"
+          : done
+            ? "text-muted-foreground hover:bg-muted/60"
+            : "hover:bg-muted text-foreground"
       )}
     >
-      {lesson.completed ? (
+      {done ? (
         <CheckCircle2 className="h-4 w-4 shrink-0 text-green-500" />
       ) : (
         <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
       )}
       <div className="flex-1 min-w-0">
-        <span className="line-clamp-1 block">{lesson.title}</span>
-        {lesson.scheduled_at && (
+        <span className={cn("line-clamp-1 block", done && !active && "text-muted-foreground")}>
+          {lesson.title}
+        </span>
+        {done && !active && (
+          <span className="text-xs font-medium text-green-600">Completada</span>
+        )}
+        {lesson.scheduled_at && !done && (
           <span className="flex items-center gap-1 text-xs text-blue-600 mt-0.5">
             <CalendarClock className="h-3 w-3 shrink-0" />
             {formatScheduled(lesson.scheduled_at)}
           </span>
         )}
       </div>
-      {lesson.duration_minutes && (
+      {lesson.duration_minutes && !done && (
         <span className="text-xs text-muted-foreground shrink-0">
           {lesson.duration_minutes}m
         </span>

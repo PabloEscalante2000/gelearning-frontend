@@ -106,7 +106,7 @@ export default function LessonPage() {
             </div>
           ) : (
             <Button
-              onClick={() => complete.mutate({ lessonId, courseId })}
+              onClick={() => complete.mutate({ lessonId, moduleId, courseId })}
               disabled={complete.isPending}
             >
               {complete.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
