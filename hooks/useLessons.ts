@@ -53,7 +53,7 @@ export function useCreateLesson() {
       courseId: string;
       title: string;
       type: string;
-      content_url: string;
+      content_url?: string | null;
       duration_minutes?: number | null;
       order?: number;
       is_published?: boolean;

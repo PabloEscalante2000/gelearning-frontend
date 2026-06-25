@@ -2,7 +2,7 @@
 
 export type UserRole = "admin" | "instructor" | "student";
 export type CourseStatus = "draft" | "published" | "archived";
-export type LessonType = "video" | "pdf" | "word" | "link";
+export type LessonType = "video" | "pdf" | "word" | "link" | "submission";
 
 // ── Core models ───────────────────────────────────────────────────────────────
 
@@ -69,12 +69,25 @@ export interface Lesson {
   module_id: number;
   title: string;
   type: LessonType;
-  content_url: string;
+  content_url: string | null;
   duration_minutes: number | null;
   order: number;
   is_published: boolean;
   scheduled_at: string | null;
   completed?: boolean;
+}
+
+export interface StudentSubmission {
+  id: number;
+  user_id: number;
+  lesson_id: number;
+  course_id: number;
+  file_name: string;
+  file_path: string;
+  file_size: number;
+  mime_type: string | null;
+  submitted_at: string;
+  user?: { id: number; name: string; email: string };
 }
 
 export interface LiveSession {

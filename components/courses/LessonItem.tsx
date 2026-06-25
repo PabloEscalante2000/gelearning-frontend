@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { CheckCircle2, PlayCircle, FileText, Link2, FileIcon, CalendarClock } from "lucide-react";
+import { CheckCircle2, PlayCircle, FileText, Link2, FileIcon, CalendarClock, UploadCloud } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Lesson } from "@/types";
 
@@ -26,6 +26,7 @@ const typeIcon = {
   pdf: FileText,
   word: FileIcon,
   link: Link2,
+  submission: UploadCloud,
 };
 
 export default function LessonItem({ lesson, courseId, moduleId, active }: LessonItemProps) {
