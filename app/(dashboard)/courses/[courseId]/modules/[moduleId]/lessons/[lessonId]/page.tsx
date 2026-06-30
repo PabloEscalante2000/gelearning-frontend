@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useRef, useState } from "react";
-import { ArrowLeft, CheckCircle, Loader2, ExternalLink, CalendarClock, UploadCloud, Download, FileCheck } from "lucide-react";
+import { ArrowLeft, CheckCircle, Loader2, ExternalLink, CalendarClock, UploadCloud, Download, FileCheck, AlertCircle } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import VideoPlayer from "@/components/courses/VideoPlayer";
 import PdfViewer from "@/components/courses/PdfViewer";
@@ -119,6 +119,26 @@ export default function LessonPage() {
 
         {lesson.type === "submission" && (
           <div className="space-y-4">
+            {lesson.due_date && (() => {
+              const due = new Date(lesson.due_date.replace(" ", "T"));
+              const now = new Date();
+              const overdue = now > due;
+              const dateStr = due.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+              const timeStr = due.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
+              return (
+                <div className={`flex items-center gap-3 rounded-lg border px-4 py-3 ${overdue ? "border-red-200 bg-red-50" : "border-amber-200 bg-amber-50"}`}>
+                  <AlertCircle className={`h-5 w-5 shrink-0 ${overdue ? "text-red-500" : "text-amber-500"}`} />
+                  <div className="text-sm">
+                    <span className={`font-semibold ${overdue ? "text-red-800" : "text-amber-800"}`}>
+                      {overdue ? "Fecha de entrega vencida: " : "Fecha de entrega: "}
+                    </span>
+                    <span className={overdue ? "text-red-700" : "text-amber-700"}>
+                      {dateStr} a las {timeStr}
+                    </span>
+                  </div>
+                </div>
+              );
+            })()}
             {lesson.content_url && (
               <div className="rounded-lg border bg-muted/40 p-4 space-y-1">
                 <p className="text-sm font-semibold">Instrucciones</p>

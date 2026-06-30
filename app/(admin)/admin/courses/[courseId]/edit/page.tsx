@@ -51,6 +51,7 @@ const lessonSchema = z.object({
   duration_minutes: z.string().optional(),
   is_published: z.boolean(),
   scheduled_at: z.string().optional(),
+  due_date: z.string().optional(),
 }).superRefine((data, ctx) => {
   if (data.type !== "submission") {
     if (!data.content_url) {
@@ -123,6 +124,7 @@ function LessonRow({
       duration_minutes: lesson.duration_minutes != null ? String(lesson.duration_minutes) : "",
       is_published: lesson.is_published,
       scheduled_at: toDatetimeLocal(lesson.scheduled_at),
+      due_date: toDatetimeLocal(lesson.due_date),
     },
   });
   const watchedType = watch("type");
@@ -135,6 +137,7 @@ function LessonRow({
       ...data,
       duration_minutes: parseDuration(data.duration_minutes),
       scheduled_at: data.scheduled_at || null,
+      due_date: data.due_date || null,
     });
     setEditing(false);
   };
@@ -184,6 +187,12 @@ function LessonRow({
               <Label className="text-xs">URL del contenido</Label>
               <Input {...register("content_url")} placeholder="https://..." />
               {errors.content_url && <p className="text-xs text-destructive">{errors.content_url.message}</p>}
+            </div>
+          )}
+          {watchedType === "submission" && (
+            <div className="col-span-2 space-y-1">
+              <Label className="text-xs">Fecha de entrega <span className="text-muted-foreground font-normal">(opcional)</span></Label>
+              <Input type="datetime-local" {...register("due_date")} />
             </div>
           )}
           <div className="col-span-2 space-y-1">
@@ -334,8 +343,9 @@ function AddLessonForm({
       ...data,
       duration_minutes: parseDuration(data.duration_minutes),
       scheduled_at: data.scheduled_at || null,
+      due_date: data.due_date || null,
     });
-    reset({ type: "video", is_published: false, content_url: "", scheduled_at: "" });
+    reset({ type: "video", is_published: false, content_url: "", scheduled_at: "", due_date: "" });
     onDone();
   };
 
@@ -373,6 +383,12 @@ function AddLessonForm({
           <div className="col-span-2 space-y-1">
             <Input {...register("content_url")} placeholder="https://..." />
             {errors.content_url && <p className="text-xs text-destructive">{errors.content_url.message}</p>}
+          </div>
+        )}
+        {watchedTypeAdd === "submission" && (
+          <div className="col-span-2 space-y-1">
+            <Label className="text-xs">Fecha de entrega <span className="text-muted-foreground font-normal">(opcional)</span></Label>
+            <Input type="date" {...register("due_date")} />
           </div>
         )}
         <div className="col-span-2 space-y-1">

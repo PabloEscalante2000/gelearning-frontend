@@ -58,6 +58,7 @@ export function useCreateLesson() {
       order?: number;
       is_published?: boolean;
       scheduled_at?: string | null;
+      due_date?: string | null;
     }) => apiClient.post(`/api/v1/modules/${moduleId}/lessons`, payload),
     onSuccess: (_, { courseId }) => {
       queryClient.invalidateQueries({ queryKey: ["course", courseId] });
@@ -84,6 +85,7 @@ export function useUpdateLesson() {
       duration_minutes?: number | null;
       is_published?: boolean;
       scheduled_at?: string | null;
+      due_date?: string | null;
     }) =>
       apiClient.put(
         `/api/v1/modules/${moduleId}/lessons/${lessonId}`,

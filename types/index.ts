@@ -74,6 +74,7 @@ export interface Lesson {
   order: number;
   is_published: boolean;
   scheduled_at: string | null;
+  due_date: string | null;
   completed?: boolean;
 }
 
