@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
 import { ArrowLeft, Loader2, Send, Lock } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -12,12 +11,19 @@ import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { useForumThread, useCreateReply } from "@/hooks/useForum";
+import { useUrlParams } from "@/hooks/useUrlParams";
+
+const FORUM_THREAD_PATH = /\/courses\/([^/]+)\/forum\/([^/]+)/;
+const FORUM_THREAD_PATH_KEYS = ["courseId", "threadId"] as const;
 
 const replySchema = z.object({ body: z.string().min(5, "Mínimo 5 caracteres") });
 type ReplyForm = z.infer<typeof replySchema>;
 
 export default function ForumThreadPage() {
-  const { courseId, threadId } = useParams<{ courseId: string; threadId: string }>();
+  const { courseId, threadId } = useUrlParams<{ courseId: string; threadId: string }>(
+    FORUM_THREAD_PATH,
+    FORUM_THREAD_PATH_KEYS
+  );
 
   // Thread detail includes replies[] directly from the API
   const { data: thread, isLoading } = useForumThread(courseId, threadId);

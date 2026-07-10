@@ -1,15 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
 import { ArrowLeft, CheckCircle2, Circle, Loader2, Award } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import ProgressBar from "@/components/courses/ProgressBar";
 import { useCourse, useCourseProgress, useCourseCertificate } from "@/hooks/useCourses";
+import { useUrlParams } from "@/hooks/useUrlParams";
+
+const PROGRESS_PATH = /\/courses\/([^/]+)\/progress\/?$/;
+const PROGRESS_PATH_KEYS = ["courseId"] as const;
 
 export default function CourseProgressPage() {
-  const { courseId } = useParams<{ courseId: string }>();
+  const { courseId } = useUrlParams<{ courseId: string }>(PROGRESS_PATH, PROGRESS_PATH_KEYS);
   const { data: progress, isLoading: loadingProgress } = useCourseProgress(courseId);
   const { data: course, isLoading: loadingCourse } = useCourse(courseId);
   const { data: certificate } = useCourseCertificate(courseId);

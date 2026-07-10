@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -26,7 +25,11 @@ import { useCreateLesson, useUpdateLesson, useDeleteLesson } from "@/hooks/useLe
 import { useLessonSubmissions, downloadSubmission } from "@/hooks/useSubmissions";
 import { useUsers } from "@/hooks/useUsers";
 import { useModuleAccess, useUpdateModuleAccess } from "@/hooks/useModuleAccess";
+import { useUrlParams } from "@/hooks/useUrlParams";
 import type { Module, Lesson } from "@/types";
+
+const ADMIN_COURSE_PATH = /\/admin\/courses\/([^/]+)\/edit\/?$/;
+const ADMIN_COURSE_PATH_KEYS = ["courseId"] as const;
 
 // ── Schemas ──────────────────────────────────────────────────────────────────
 
@@ -72,10 +75,7 @@ function toDatetimeLocal(dt: string | null | undefined): string {
 }
 
 function formatScheduledShort(dt: string): string {
-  const [datePart, timePart] = dt.split(" ");
-  const [y, m, d] = datePart.split("-").map(Number);
-  const [h, min] = (timePart ?? "00:00").split(":").map(Number);
-  const date = new Date(y, m - 1, d, h, min);
+  const date = new Date(dt);
   return date.toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" })
     + " " + date.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
 }
@@ -778,7 +778,7 @@ function StudentsTab({ courseId }: { courseId: string }) {
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function EditCoursePage() {
-  const { courseId } = useParams<{ courseId: string }>();
+  const { courseId } = useUrlParams<{ courseId: string }>(ADMIN_COURSE_PATH, ADMIN_COURSE_PATH_KEYS);
   const { data: course, isLoading: loadingCourse } = useCourse(courseId);
   const { data: modules = [], isLoading: loadingModules } = useModules(courseId);
   const { data: instructors = [] } = useUsers("instructor");

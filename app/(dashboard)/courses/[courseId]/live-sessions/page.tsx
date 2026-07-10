@@ -1,17 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
 import { ArrowLeft, Calendar, Clock, ExternalLink, Loader2, Video } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import apiClient from "@/lib/axios";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useUrlParams } from "@/hooks/useUrlParams";
 import type { LiveSession } from "@/types";
 
+const LIVE_SESSIONS_PATH = /\/courses\/([^/]+)\/live-sessions\/?$/;
+const LIVE_SESSIONS_PATH_KEYS = ["courseId"] as const;
+
 export default function LiveSessionsPage() {
-  const { courseId } = useParams<{ courseId: string }>();
+  const { courseId } = useUrlParams<{ courseId: string }>(LIVE_SESSIONS_PATH, LIVE_SESSIONS_PATH_KEYS);
   const { data: sessions = [], isLoading } = useQuery({
     queryKey: ["live-sessions", courseId],
     queryFn: async () => {

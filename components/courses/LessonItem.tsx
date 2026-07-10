@@ -6,10 +6,7 @@ import { cn } from "@/lib/utils";
 import type { Lesson } from "@/types";
 
 function formatScheduled(dt: string): string {
-  const [datePart, timePart] = dt.split(" ");
-  const [y, m, d] = datePart.split("-").map(Number);
-  const [h, min] = (timePart ?? "00:00").split(":").map(Number);
-  const date = new Date(y, m - 1, d, h, min);
+  const date = new Date(dt);
   return date.toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" })
     + " · " + date.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
 }

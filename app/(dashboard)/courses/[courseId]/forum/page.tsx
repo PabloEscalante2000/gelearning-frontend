@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
 import { MessageSquare, Plus, Loader2, ArrowLeft, Pin } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -13,6 +12,10 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useForumThreads, useCreateThread } from "@/hooks/useForum";
+import { useUrlParams } from "@/hooks/useUrlParams";
+
+const FORUM_PATH = /\/courses\/([^/]+)\/forum\/?$/;
+const FORUM_PATH_KEYS = ["courseId"] as const;
 
 const threadSchema = z.object({
   title: z.string().min(5, "Mínimo 5 caracteres"),
@@ -21,7 +24,7 @@ const threadSchema = z.object({
 type ThreadForm = z.infer<typeof threadSchema>;
 
 export default function ForumPage() {
-  const { courseId } = useParams<{ courseId: string }>();
+  const { courseId } = useUrlParams<{ courseId: string }>(FORUM_PATH, FORUM_PATH_KEYS);
   const [showForm, setShowForm] = useState(false);
   const { data: threads = [], isLoading } = useForumThreads(courseId);
   const createThread = useCreateThread();

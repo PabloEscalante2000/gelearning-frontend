@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
 import { useRef, useState } from "react";
 import { ArrowLeft, CheckCircle, Loader2, ExternalLink, CalendarClock, UploadCloud, Download, FileCheck, AlertCircle } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -11,12 +10,13 @@ import ModuleAccordion from "@/components/courses/ModuleAccordion";
 import { useLesson, useCompleteLesson } from "@/hooks/useLessons";
 import { useCourse } from "@/hooks/useCourses";
 import { useMySubmission, useSubmitAssignment, downloadSubmission } from "@/hooks/useSubmissions";
+import { useUrlParams } from "@/hooks/useUrlParams";
+
+const LESSON_PATH = /\/courses\/([^/]+)\/modules\/([^/]+)\/lessons\/([^/]+)/;
+const LESSON_PATH_KEYS = ["courseId", "moduleId", "lessonId"] as const;
 
 function formatScheduled(dt: string): string {
-  const [datePart, timePart] = dt.split(" ");
-  const [y, m, d] = datePart.split("-").map(Number);
-  const [h, min] = (timePart ?? "00:00").split(":").map(Number);
-  const date = new Date(y, m - 1, d, h, min);
+  const date = new Date(dt);
   const dayStr = date.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
   const timeStr = date.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
   return `${dayStr} a las ${timeStr}`;
@@ -28,11 +28,11 @@ function toAbsoluteUrl(url: string | null | undefined): string {
 }
 
 export default function LessonPage() {
-  const { courseId, moduleId, lessonId } = useParams<{
+  const { courseId, moduleId, lessonId } = useUrlParams<{
     courseId: string;
     moduleId: string;
     lessonId: string;
-  }>();
+  }>(LESSON_PATH, LESSON_PATH_KEYS);
 
   const { data: lesson, isLoading } = useLesson(moduleId, lessonId);
   const { data: course } = useCourse(courseId);

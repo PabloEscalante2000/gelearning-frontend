@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import {
   BookOpen, MessageSquare, Video, TrendingUp, Loader2,
   Users, Award, ShoppingCart, CheckCircle, Lock,
@@ -13,7 +13,11 @@ import ModuleAccordion from "@/components/courses/ModuleAccordion";
 import ProgressBar from "@/components/courses/ProgressBar";
 import { useCourse, useCourseProgress } from "@/hooks/useCourses";
 import { useCreatePaymentPreference } from "@/hooks/usePayments";
+import { useUrlParams } from "@/hooks/useUrlParams";
 import { useQueryClient } from "@tanstack/react-query";
+
+const COURSE_PATH = /\/courses\/([^/]+)\/?$/;
+const COURSE_PATH_KEYS = ["courseId"] as const;
 
 function formatPrice(price: string | null | undefined): string {
   if (price === null || price === undefined) return "";
@@ -313,7 +317,7 @@ function CourseFullView({
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function CourseDetailPage() {
-  const { courseId } = useParams<{ courseId: string }>();
+  const { courseId } = useUrlParams<{ courseId: string }>(COURSE_PATH, COURSE_PATH_KEYS);
   const { data: course, isLoading } = useCourse(courseId);
 
   if (isLoading) {

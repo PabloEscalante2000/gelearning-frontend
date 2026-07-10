@@ -27,9 +27,48 @@ LOCAL_ROOT   = Path(__file__).parent
 
 DEPLOY_SECRET = hashlib.sha256((SSH_PASSWORD + "frontend").encode()).hexdigest()[:32]
 
-HTACCESS = """<IfModule mod_rewrite.c>
+HTACCESS = """Options -MultiViews
+<IfModule mod_rewrite.c>
     RewriteEngine On
     RewriteBase /learning/
+
+    # --- Leccion: si la pagina real (ID exacto) aun no fue generada por el
+    # ultimo build, cae al placeholder 0/0/0, que carga los datos reales
+    # via API en el cliente segun la URL real ---
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^courses/([^/]+)/modules/([^/]+)/lessons/([^/]+)/?$ courses/0/modules/0/lessons/0/index.html [L]
+
+    # --- Hilo de foro ---
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^courses/([^/]+)/forum/([^/]+)/?$ courses/0/forum/0/index.html [L]
+
+    # --- Foro (listado) ---
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^courses/([^/]+)/forum/?$ courses/0/forum/index.html [L]
+
+    # --- Live sessions / progress ---
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^courses/([^/]+)/live-sessions/?$ courses/0/live-sessions/index.html [L]
+
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^courses/([^/]+)/progress/?$ courses/0/progress/index.html [L]
+
+    # --- Detalle de curso ---
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^courses/([^/]+)/?$ courses/0/index.html [L]
+
+    # --- Admin: edicion de curso ---
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^admin/courses/([^/]+)/edit/?$ admin/courses/0/edit/index.html [L]
+
+    # --- Fallback general SPA (rutas sin ID dinamico, p.ej. /dashboard) ---
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteRule . index.html [L]
@@ -196,6 +235,7 @@ def main():
     build_env = os.environ.copy()
     build_env["NEXT_PUBLIC_API_URL"] = "https://grupoeades.org/gelearningbackend"
     build_env["NEXT_PUBLIC_BASE_PATH"] = "/learning"
+    build_env["BUILD_SITEMAP_SECRET"] = "017cd8fddd696f7807f6ddefe0e58645a5c2820509b34c1a6cd0a58d3502302d"
     result = subprocess.run(
         "npm run build",
         cwd=str(LOCAL_ROOT),
@@ -242,7 +282,8 @@ def main():
     http_post("self_destruct")
     ssh.close()
     print("      OK")
-    print(f"\n✅ Frontend desplegado en: https://grupoeades.org/learning/")
+    msg = "\n[OK] Frontend desplegado en: https://grupoeades.org/learning/"
+    print(msg.encode(sys.stdout.encoding or "utf-8", errors="replace").decode(sys.stdout.encoding or "utf-8", errors="replace"))
 
 
 if __name__ == "__main__":
